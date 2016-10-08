@@ -102,6 +102,7 @@ func (c *localController) configureContainerInterface(iface netlink.Link, bridge
 
 	ipAddr := &netlink.Addr{IPNet: n, Label: ""}
 	logrus.Debugf("assigning ip to container peer: %s", ipAddr.IPNet.IP.String())
+	// TODO: reserve ip in datastore backend
 	if err := netlink.AddrAdd(cIface, ipAddr); err != nil {
 		return fmt.Errorf("error assigning ip to container peer interface: s", err)
 	}
@@ -152,6 +153,7 @@ func (c *localController) configureLocalInterface(networkName string, bridgeNet 
 
 	peerAddr := &netlink.Addr{IPNet: ln, Label: ""}
 	logrus.Debugf("assigning ip to container peer: %s", peerAddr.IPNet.IP.String())
+	// TODO: reserve ip in datastore backend
 	if err := netlink.AddrAdd(peer, peerAddr); err != nil {
 		return fmt.Errorf("error assigning ip to local peer: %s", err)
 	}

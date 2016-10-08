@@ -52,6 +52,6 @@ Example:
 			logrus.Fatal(err)
 		}
 
-		logrus.Infof("created %s", networkName)
+		logrus.Infof("%s created", networkName)
 	},
 }
