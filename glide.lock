@@ -1,0 +1,28 @@
+hash: 98667d36095a01649662269b24ac490aa25f9a8f33020d138f431476e72da7a3
+updated: 2016-10-08T02:43:53.737226998-04:00
+imports:
+- name: github.com/coreos/go-iptables
+  version: 5463fbac3bcc6b990663941c2e12660d19f6b36d
+  subpackages:
+  - iptables
+- name: github.com/ehazlett/simplelog
+  version: a328490a561e74e0d04750e401f9813a390777d6
+- name: github.com/inconshreveable/mousetrap
+  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/Sirupsen/logrus
+  version: 3ec0642a7fb6488f65b06f9040adc67e3990296a
+- name: github.com/spf13/cobra
+  version: 9c28e4bbd74e5c3ed7aacbc552b2cab7cfdfe744
+- name: github.com/spf13/pflag
+  version: b83537d79690b75cac5e021b036ae16792bf0f20
+- name: github.com/vishvananda/netlink
+  version: da7420cab5e209195f5f7387fccd4c7f48758d30
+  subpackages:
+  - nl
+- name: github.com/vishvananda/netns
+  version: 8ba1072b58e0c2a240eb5f6120165c7776c3e7b8
+- name: golang.org/x/sys
+  version: 8d1157a435470616f975ff9bb013bea8d0962067
+  subpackages:
+  - unix
+testImports: []

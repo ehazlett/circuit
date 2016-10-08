@@ -1,0 +1,6 @@
+package: github.com/ehazlett/circuit
+import:
+- package: github.com/Sirupsen/logrus
+- package: github.com/ehazlett/simplelog
+- package: github.com/spf13/cobra
+- package: github.com/coreos/go-iptables
