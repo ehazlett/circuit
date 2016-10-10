@@ -11,8 +11,8 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-// CreateNetwork will create and setup a network bridge as well
-// as a veth pair for use with a container.  This only creates the network.
+// CreateNetwork will create and setup a network bridge
+// This only creates the network.
 // To connect to a container, use `ConnectNetwork`.
 func (c *localController) CreateNetwork(cfg *config.Network) error {
 	// create bridge
@@ -20,18 +20,10 @@ func (c *localController) CreateNetwork(cfg *config.Network) error {
 		return err
 	}
 
-	// TODO: create veth pair (ip link add veth0 type veth peer name vethXX)
-	bridgeName := getBridgeName(cfg.Name)
-	vethPair, err := createVethPair(cfg.Name, bridgeName)
-	if err != nil {
-		return fmt.Errorf("error configuring veth pair: %s", err)
+	// save
+	if err := c.ds.SaveNetwork(cfg); err != nil {
+		return err
 	}
-
-	if err := netlink.LinkAdd(vethPair); err != nil {
-		return fmt.Errorf("error creating veth pair: %s", err)
-	}
-
-	logrus.Debugf("veth pair created: %+v", vethPair)
 
 	return nil
 }
@@ -126,20 +118,4 @@ func (c *localController) addNat(ip string) error {
 	}
 
 	return nil
-}
-
-func createVethPair(netName, bridgeName string) (*netlink.Veth, error) {
-	br, err := netlink.LinkByName(bridgeName)
-	if err != nil {
-		return nil, err
-	}
-
-	attrs := netlink.NewLinkAttrs()
-	attrs.Name = getLocalPeerName(netName)
-	attrs.MasterIndex = br.Attrs().Index
-
-	return &netlink.Veth{
-		LinkAttrs: attrs,
-		PeerName:  getContainerPeerName(netName),
-	}, nil
 }

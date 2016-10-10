@@ -1,8 +1,6 @@
 package local
 
 import (
-	"fmt"
-
 	"github.com/Sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 )
@@ -11,19 +9,18 @@ func (c *localController) DeleteNetwork(name string) error {
 	// stop and remove veth pair
 	logrus.Debugf("removing veth pair")
 	peerName := getLocalPeerName(name)
-	peer, err := netlink.LinkByName(peerName)
-	if err != nil {
-		return fmt.Errorf("error getting local peer interface: %s", err)
-	}
+	// ignore errors when trying to find peer; peer is removed
+	// upon container stop so it might not exist
+	peer, _ := netlink.LinkByName(peerName)
+	if peer != nil {
+		if err := netlink.LinkSetDown(peer); err != nil {
+			return err
+		}
 
-	if err := netlink.LinkSetDown(peer); err != nil {
-		return err
+		if err := netlink.LinkDel(peer); err != nil {
+			return err
+		}
 	}
-
-	if err := netlink.LinkDel(peer); err != nil {
-		return err
-	}
-
 	// TODO: remove tc (tc qdisc del dev <veth> root)
 
 	// TODO: "release" IPs back to pool
@@ -56,15 +53,22 @@ func (c *localController) DeleteNetwork(name string) error {
 	// stop and remove bridge
 	logrus.Debugf("removing bridge: %s", bridgeName)
 	br, err := netlink.LinkByName(bridgeName)
+	// warn only on missing bridge as it might have been removed manually
 	if err != nil {
-		return err
+		logrus.Warn(err)
 	}
 
-	if err := netlink.LinkSetDown(br); err != nil {
-		return err
+	if br != nil {
+		if err := netlink.LinkSetDown(br); err != nil {
+			return err
+		}
+
+		if err := netlink.LinkDel(br); err != nil {
+			return err
+		}
 	}
 
-	if err := netlink.LinkDel(br); err != nil {
+	if err := c.ds.DeleteNetwork(name); err != nil {
 		return err
 	}
 

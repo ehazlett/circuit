@@ -18,9 +18,9 @@ const (
 )
 
 type localController struct {
-	config  *controller.ControllerConfig
-	backend ds.Backend
-	ipam    *ipam.IPAM
+	config *controller.ControllerConfig
+	ds     ds.Backend
+	ipam   *ipam.IPAM
 }
 
 func NewLocalController(c *controller.ControllerConfig) (*localController, error) {
@@ -47,7 +47,7 @@ func NewLocalController(c *controller.ControllerConfig) (*localController, error
 			logrus.Fatalf("error initializing datastore: %s", err)
 		}
 
-		l.backend = ls
+		l.ds = ls
 	case "consul":
 		logrus.Debug("configuring state path for consul")
 		// TODO: instantiate consul backend and set in controller
@@ -55,7 +55,7 @@ func NewLocalController(c *controller.ControllerConfig) (*localController, error
 		logrus.Fatalf("unknown datastore uri: %s", c.DsURI)
 	}
 
-	ipm, err := ipam.NewIPAM(l.backend)
+	ipm, err := ipam.NewIPAM(l.ds)
 	if err != nil {
 		logrus.Fatalf("error initializing ipam: %s", err)
 	}

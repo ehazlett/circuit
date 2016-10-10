@@ -11,24 +11,36 @@ import (
 )
 
 // ConnectNetwork connects a container to a network.  Note, the network
-// must be setup using `CreateNetwork`.
+// must be setup using `CreateNetwork`.  This creates a veth pair for use
+// with the host and container.
 func (c *localController) ConnectNetwork(name string, containerPid int) error {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
 	logrus.Debugf("connecting %s to container %d", name, containerPid)
 
+	bridgeName := getBridgeName(name)
+	// TODO: support adding multiple veth to host to support
+	// multiple containers per network
+	vethPair, err := createVethPair(name, bridgeName)
+	if err != nil {
+		return fmt.Errorf("error configuring veth pair: %s", err)
+	}
+
+	if err := netlink.LinkAdd(vethPair); err != nil {
+		return fmt.Errorf("error creating veth pair: %s", err)
+	}
+
+	bridgeNet, err := getInterfaceAddr(bridgeName)
+	if err != nil {
+		return err
+	}
+
 	originalNS, err := netns.Get()
 	if err != nil {
 		return err
 	}
 	defer originalNS.Close()
-
-	bridgeName := getBridgeName(name)
-	brNet, err := getInterfaceAddr(bridgeName)
-	if err != nil {
-		return err
-	}
 
 	containerPeerName := getContainerPeerName(name)
 	logrus.Debugf("using container peer: %s", containerPeerName)
@@ -55,7 +67,7 @@ func (c *localController) ConnectNetwork(name string, containerPid int) error {
 	}
 
 	// configure container interface
-	if err := c.configureContainerInterface(iface, brNet); err != nil {
+	if err := c.configureContainerInterface(iface, name, bridgeNet); err != nil {
 		return err
 	}
 
@@ -65,14 +77,14 @@ func (c *localController) ConnectNetwork(name string, containerPid int) error {
 	}
 
 	// configure local peer
-	if err := c.configureLocalInterface(name, brNet); err != nil {
+	if err := c.configureLocalInterface(name, bridgeNet); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (c *localController) configureContainerInterface(iface netlink.Link, bridgeNet *net.IPNet) error {
+func (c *localController) configureContainerInterface(iface netlink.Link, networkName string, bridgeNet *net.IPNet) error {
 	if err := netlink.LinkSetDown(iface); err != nil {
 		return fmt.Errorf("error downing interface: %s", err)
 	}
@@ -86,7 +98,7 @@ func (c *localController) configureContainerInterface(iface netlink.Link, bridge
 		return fmt.Errorf("error getting container peer interface: %s", err)
 	}
 	// allocate IP for peer
-	ip, err := c.ipam.AllocateIP(bridgeNet)
+	ip, err := c.ipam.AllocateIP(bridgeNet, networkName)
 	if err != nil {
 		return err
 	}
@@ -102,7 +114,6 @@ func (c *localController) configureContainerInterface(iface netlink.Link, bridge
 
 	ipAddr := &netlink.Addr{IPNet: n, Label: ""}
 	logrus.Debugf("assigning ip to container peer: %s", ipAddr.IPNet.IP.String())
-	// TODO: reserve ip in datastore backend
 	if err := netlink.AddrAdd(cIface, ipAddr); err != nil {
 		return fmt.Errorf("error assigning ip to container peer interface: s", err)
 	}
@@ -125,7 +136,7 @@ func (c *localController) configureContainerInterface(iface netlink.Link, bridge
 }
 
 func (c *localController) configureLocalInterface(networkName string, bridgeNet *net.IPNet) error {
-	localIP, err := c.ipam.AllocateIP(bridgeNet)
+	localIP, err := c.ipam.AllocateIP(bridgeNet, networkName)
 	if err != nil {
 		return err
 	}
@@ -153,7 +164,6 @@ func (c *localController) configureLocalInterface(networkName string, bridgeNet 
 
 	peerAddr := &netlink.Addr{IPNet: ln, Label: ""}
 	logrus.Debugf("assigning ip to container peer: %s", peerAddr.IPNet.IP.String())
-	// TODO: reserve ip in datastore backend
 	if err := netlink.AddrAdd(peer, peerAddr); err != nil {
 		return fmt.Errorf("error assigning ip to local peer: %s", err)
 	}
