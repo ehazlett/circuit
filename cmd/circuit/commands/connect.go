@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"log"
 	"strconv"
 
 	"github.com/Sirupsen/logrus"
@@ -16,7 +15,7 @@ Example:
     circuit connect 12345 foo`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 2 {
-			cmd.Usage()
+			cmd.Help()
 			return
 		}
 
@@ -29,16 +28,16 @@ Example:
 		networkName := args[1]
 
 		if pidNum == "" {
-			log.Fatal("ERR: you must specify a container pid")
+			logrus.Fatal("ERR: you must specify a container pid")
 		}
 
 		if networkName == "" {
-			log.Fatal("ERR: you must specify a network name")
+			logrus.Fatal("ERR: you must specify a network name")
 		}
 
 		pid, err := strconv.Atoi(pidNum)
 		if err != nil {
-			log.Fatalf("ERR: unable to detect pid: %s", err)
+			logrus.Fatalf("ERR: unable to detect pid: %s", err)
 		}
 
 		if err := c.ConnectNetwork(networkName, pid); err != nil {

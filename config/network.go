@@ -1,7 +1,6 @@
 package config
 
 type Network struct {
-	Name           string
-	Subnet         string
-	BandwidthBytes int
+	Name   string
+	Subnet string
 }

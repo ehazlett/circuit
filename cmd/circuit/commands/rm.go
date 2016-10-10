@@ -11,7 +11,7 @@ var networksRmCmd = &cobra.Command{
 	Long:  "Remove a network managed by Circuit",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 1 {
-			cmd.Usage()
+			cmd.Help()
 			return
 		}
 

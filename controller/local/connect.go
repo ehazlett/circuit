@@ -22,11 +22,12 @@ func (c *localController) ConnectNetwork(name string, containerPid int) error {
 	bridgeName := getBridgeName(name)
 	// TODO: support adding multiple veth to host to support
 	// multiple containers per network
-	vethPair, err := createVethPair(name, bridgeName)
+	vethPair, err := createVethPair(name, bridgeName, containerPid)
 	if err != nil {
 		return fmt.Errorf("error configuring veth pair: %s", err)
 	}
 
+	logrus.Debugf("veth pair: %+v", vethPair)
 	if err := netlink.LinkAdd(vethPair); err != nil {
 		return fmt.Errorf("error creating veth pair: %s", err)
 	}
@@ -77,7 +78,7 @@ func (c *localController) ConnectNetwork(name string, containerPid int) error {
 	}
 
 	// configure local peer
-	if err := c.configureLocalInterface(name, bridgeNet); err != nil {
+	if err := c.configureLocalInterface(name, bridgeNet, containerPid); err != nil {
 		return err
 	}
 
@@ -135,7 +136,7 @@ func (c *localController) configureContainerInterface(iface netlink.Link, networ
 	return nil
 }
 
-func (c *localController) configureLocalInterface(networkName string, bridgeNet *net.IPNet) error {
+func (c *localController) configureLocalInterface(networkName string, bridgeNet *net.IPNet, containerPid int) error {
 	localIP, err := c.ipam.AllocateIP(bridgeNet, networkName)
 	if err != nil {
 		return err
@@ -144,7 +145,7 @@ func (c *localController) configureLocalInterface(networkName string, bridgeNet 
 	logrus.Debugf("allocated ip for local peer: %s", localIP.String())
 
 	// get interface from bridge
-	peerName := getLocalPeerName(networkName)
+	peerName := getLocalPeerName(networkName, containerPid)
 	peer, err := netlink.LinkByName(peerName)
 	if err != nil {
 		return fmt.Errorf("error getting local peer interface: %s", err)
