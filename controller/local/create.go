@@ -53,9 +53,14 @@ func (c *localController) createBridge(cfg *config.Network) error {
 	if err != nil {
 		return fmt.Errorf("error parsing network subnet: %s", err)
 	}
+	// split and create the router (x.x.x.1) IP to assign to bridge
 	a := ip.To4()
 	ipAddr := net.IPv4(a[0], a[1], a[2], byte(1))
-	addr, err := netlink.ParseAddr(ipAddr.String() + "/16")
+	// hack: manually split the subnet to join as /x
+	parts := strings.Split(cfg.Subnet, "/")
+	sub := parts[1]
+
+	addr, err := netlink.ParseAddr(fmt.Sprintf("%s/%s", ipAddr.String(), sub))
 	if err != nil {
 		return fmt.Errorf("error parsing address %s: %s", ipAddr, err)
 	}
