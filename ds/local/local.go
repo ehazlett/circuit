@@ -159,6 +159,26 @@ func (l *localDS) GetNetworkIPs(name string) ([]net.IP, error) {
 	return ips, nil
 }
 
+func (l *localDS) GetNetworks() ([]*config.Network, error) {
+	basePath := filepath.Join(l.statePath, networksPath)
+	nets, err := ioutil.ReadDir(basePath)
+	if err != nil {
+		return nil, err
+	}
+	var networks []*config.Network
+
+	for _, p := range nets {
+		n, err := l.GetNetwork(p.Name())
+		if err != nil {
+			logrus.Warnf("unable to get info for network: %s", p.Name())
+		}
+
+		networks = append(networks, n)
+	}
+
+	return networks, nil
+}
+
 func saveData(d interface{}, fPath string) error {
 	data, err := json.Marshal(d)
 	if err != nil {

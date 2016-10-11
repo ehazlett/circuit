@@ -8,9 +8,6 @@ import (
 func (c *localController) DeleteNetwork(name string) error {
 	// stop and remove veth pair
 	logrus.Debugf("removing veth pair")
-	// TODO: remove tc (tc qdisc del dev <veth> root)
-
-	// TODO: "release" IPs back to pool
 
 	// TODO: remove nat only if there are no other networks
 

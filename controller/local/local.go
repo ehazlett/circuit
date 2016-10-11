@@ -12,7 +12,6 @@ import (
 )
 
 const (
-	bridgePrefix                  = "circuit"
 	defaultMTU                    = 1500
 	defaultContainerInterfaceName = "eth0"
 )

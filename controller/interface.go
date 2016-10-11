@@ -9,4 +9,5 @@ type Controller interface {
 	DeleteNetwork(name string) error
 	SetNetworkQOS(name string, cfg *config.QOSConfig) error
 	ResetNetworkQOS(name, iface string) error
+	ListNetworks() ([]*config.Network, error)
 }

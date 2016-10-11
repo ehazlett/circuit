@@ -8,6 +8,7 @@ import (
 
 type Backend interface {
 	GetNetwork(name string) (*config.Network, error)
+	GetNetworks() ([]*config.Network, error)
 	SaveNetwork(network *config.Network) error
 	SaveIPAddr(ip, network string) error
 	DeleteIPAddr(ip, network string) error

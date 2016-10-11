@@ -4,11 +4,12 @@ import (
 	"fmt"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/ehazlett/circuit/controller"
 	"github.com/vishvananda/netlink"
 )
 
 func getBridgeName(netName string) string {
-	return bridgePrefix + "-" + netName
+	return controller.InterfacePrefix + "-" + netName
 }
 
 func getLocalPeerName(netName string, containerPid int) string {
