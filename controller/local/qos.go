@@ -47,10 +47,10 @@ func (c *localController) SetNetworkQOS(networkName string, cfg *config.QOSConfi
 
 		htbattrs := netlink.HtbClassAttrs{}
 		if cfg.Rate > 0 {
-			htbattrs.Rate = uint64(cfg.Rate * 10000)
+			htbattrs.Rate = uint64(cfg.Rate * 1000)
 		}
 		if cfg.Ceiling > 0 {
-			htbattrs.Ceil = uint64(cfg.Ceiling * 10000)
+			htbattrs.Ceil = uint64(cfg.Ceiling * 1000)
 		}
 
 		if cfg.Priority > 0 {

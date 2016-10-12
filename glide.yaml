@@ -4,3 +4,4 @@ import:
 - package: github.com/ehazlett/simplelog
 - package: github.com/spf13/cobra
 - package: github.com/coreos/go-iptables
+- package: github.com/tehnerd/gnl2go

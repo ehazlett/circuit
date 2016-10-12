@@ -19,6 +19,7 @@ func init() {
 	RootCmd.AddCommand(networksCreateCmd)
 	RootCmd.AddCommand(networksConnectCmd)
 	RootCmd.AddCommand(networksDisconnectCmd)
+	RootCmd.AddCommand(networksLBCmd)
 	RootCmd.AddCommand(networksQosCmd)
 	RootCmd.AddCommand(networksRmCmd)
 }
@@ -26,7 +27,6 @@ func init() {
 var RootCmd = &cobra.Command{
 	Use:   "circuit",
 	Short: "Container Network Management",
-	Long:  "Circuit manages container networking",
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		if debug {
 			logrus.SetLevel(logrus.DebugLevel)
