@@ -20,8 +20,6 @@ func (c *localController) ConnectNetwork(name string, containerPid int) error {
 	logrus.Debugf("connecting %s to container %d", name, containerPid)
 
 	bridgeName := getBridgeName(name)
-	// TODO: support adding multiple veth to host to support
-	// multiple containers per network
 	vethPair, err := createVethPair(name, bridgeName, containerPid)
 	if err != nil {
 		return fmt.Errorf("error configuring veth pair: %s", err)
