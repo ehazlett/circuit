@@ -2,8 +2,10 @@ package local
 
 import (
 	"fmt"
+	"math/rand"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/coreos/go-iptables/iptables"
@@ -15,12 +17,20 @@ import (
 // This only creates the network.
 // To connect to a container, use `ConnectNetwork`.
 func (c *localController) CreateNetwork(cfg *config.Network) error {
+	// get a subnet if blank
+	if cfg.Subnet == "" {
+		s, err := c.getSubnet()
+		if err != nil {
+			return err
+		}
+		cfg.Subnet = s
+	}
+
 	// create bridge
 	if err := c.createBridge(cfg); err != nil {
 		return err
 	}
 
-	// save
 	if err := c.ds.SaveNetwork(cfg); err != nil {
 		return err
 	}
@@ -123,4 +133,31 @@ func (c *localController) addNat(ip string) error {
 	}
 
 	return nil
+}
+
+func (c *localController) getSubnet() (string, error) {
+	for {
+
+		taken := false
+		s := rand.NewSource(time.Now().UnixNano())
+		r := rand.New(s)
+		d := r.Intn(254)
+		sub := fmt.Sprintf("10.254.%d.0/24", d)
+
+		nets, err := c.ds.GetNetworks()
+		if err != nil {
+			return "", err
+		}
+
+		for _, n := range nets {
+			if n.Subnet == sub {
+				taken = true
+				break
+			}
+		}
+
+		if !taken {
+			return sub, nil
+		}
+	}
 }
