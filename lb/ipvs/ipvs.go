@@ -7,10 +7,12 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/ehazlett/circuit/config"
+	"github.com/ehazlett/circuit/ds"
 	"github.com/tehnerd/gnl2go"
 )
 
 type ipvsLB struct {
+	ds ds.Backend
 }
 
 func getIPVS() (*gnl2go.IpvsClient, error) {
@@ -22,8 +24,10 @@ func getIPVS() (*gnl2go.IpvsClient, error) {
 	return i, nil
 }
 
-func NewIPVSLB() (*ipvsLB, error) {
-	l := &ipvsLB{}
+func NewIPVSLB(b ds.Backend) (*ipvsLB, error) {
+	l := &ipvsLB{
+		ds: b,
+	}
 	return l, nil
 }
 
@@ -48,11 +52,20 @@ func (i *ipvsLB) CreateService(svc *config.Service) error {
 		return err
 	}
 
+	if err := i.ds.SaveService(svc); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (i *ipvsLB) RemoveService(svc *config.Service) error {
+func (i *ipvsLB) RemoveService(serviceName string) error {
 	ipvs, err := getIPVS()
+	if err != nil {
+		return err
+	}
+
+	svc, err := i.ds.GetService(serviceName)
 	if err != nil {
 		return err
 	}
@@ -71,21 +84,30 @@ func (i *ipvsLB) RemoveService(svc *config.Service) error {
 		return err
 	}
 
+	if err := i.ds.DeleteService(svc.Name); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (i *ipvsLB) AddTargetsToService(serviceAddr string, p config.Protocol, targets []string) error {
+func (i *ipvsLB) AddTargetsToService(serviceName string, targets []string) error {
 	ipvs, err := getIPVS()
 	if err != nil {
 		return err
 	}
 
-	protocol, err := getProtocol(p)
+	svc, err := i.ds.GetService(serviceName)
 	if err != nil {
 		return err
 	}
 
-	host, port, err := getHostPort(serviceAddr)
+	protocol, err := getProtocol(svc.Protocol)
+	if err != nil {
+		return err
+	}
+
+	host, port, err := getHostPort(svc.Addr)
 	if err != nil {
 		return err
 	}
@@ -100,23 +122,30 @@ func (i *ipvsLB) AddTargetsToService(serviceAddr string, p config.Protocol, targ
 		if err := ipvs.AddDestPort(host, port, thost, tport, protocol, 10, gnl2go.IPVS_MASQUERADING); err != nil {
 			return err
 		}
+		if err := i.ds.AddTargetToService(serviceName, target); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (i *ipvsLB) RemoveTargetsFromService(serviceAddr string, p config.Protocol, targets []string) error {
+func (i *ipvsLB) RemoveTargetsFromService(serviceName string, targets []string) error {
 	ipvs, err := getIPVS()
 	if err != nil {
 		return err
 	}
 
-	protocol, err := getProtocol(p)
+	svc, err := i.ds.GetService(serviceName)
+	if err != nil {
+		return err
+	}
+	protocol, err := getProtocol(svc.Protocol)
 	if err != nil {
 		return err
 	}
 
-	host, port, err := getHostPort(serviceAddr)
+	host, port, err := getHostPort(svc.Addr)
 	if err != nil {
 		return err
 	}
@@ -131,6 +160,10 @@ func (i *ipvsLB) RemoveTargetsFromService(serviceAddr string, p config.Protocol,
 		if err := ipvs.DelDestPort(host, port, thost, tport, protocol); err != nil {
 			return err
 		}
+
+		if err := i.ds.RemoveTargetFromService(serviceName, target); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -143,6 +176,10 @@ func (i *ipvsLB) ClearServices() error {
 	}
 
 	return ipvs.Flush()
+}
+
+func (i *ipvsLB) GetServices() ([]*config.Service, error) {
+	return i.ds.GetServices()
 }
 
 func getProtocol(p config.Protocol) (uint16, error) {

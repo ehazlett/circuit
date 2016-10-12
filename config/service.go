@@ -23,7 +23,9 @@ const (
 )
 
 type Service struct {
+	Name      string
 	Addr      string
 	Protocol  Protocol
 	Scheduler Scheduler
+	Targets   []string
 }

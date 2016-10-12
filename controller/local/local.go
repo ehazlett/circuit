@@ -65,7 +65,7 @@ func NewLocalController(c *controller.ControllerConfig) (*localController, error
 	l.ipam = ipm
 
 	// LoadBalancing
-	lb, err := ipvs.NewIPVSLB()
+	lb, err := ipvs.NewIPVSLB(l.ds)
 	if err != nil {
 		logrus.Fatalf("error initializing load balancer: %s", err)
 	}

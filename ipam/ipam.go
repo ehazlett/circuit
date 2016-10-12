@@ -27,10 +27,9 @@ func (i *IPAM) AllocateIP(subnet *net.IPNet, networkName string) (net.IP, error)
 	// add new source; default is deterministic
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
-	d := r.Intn(254)
-	if d == 0 {
-		d++
-	}
+	min := 2   // start at 2
+	max := 254 // no greater than 254
+	d := min + r.Intn(max-min)
 
 	if len(o) < 3 {
 		return nil, fmt.Errorf("error allocating ip: %v", subnet)

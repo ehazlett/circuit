@@ -1,6 +1,10 @@
 package commands
 
 import (
+	"fmt"
+	"os"
+	"text/tabwriter"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/ehazlett/circuit/config"
 	"github.com/spf13/cobra"
@@ -9,12 +13,15 @@ import (
 var (
 	networkLBScheduler string
 	networkLBProtocol  string
+	networkLBDetails   bool
 )
 
 func init() {
 	networksLBCreateCmd.Flags().StringVar(&networkLBProtocol, "protocol", "tcp", "Load balancer service protocol (tcp, udp)")
 	networksLBCreateCmd.Flags().StringVar(&networkLBScheduler, "scheduler", "rr", "Load balancer service scheduler type (rr, wrr, lc, wlc)")
+	networksLBLsCmd.Flags().BoolVar(&networkLBDetails, "details", false, "Show details")
 
+	networksLBCmd.AddCommand(networksLBLsCmd)
 	networksLBCmd.AddCommand(networksLBCreateCmd)
 	networksLBCmd.AddCommand(networksLBRemoveCmd)
 	networksLBCmd.AddCommand(networksLBAddTargetsCmd)
@@ -35,14 +42,20 @@ var networksLBCreateCmd = &cobra.Command{
 	Short: "Create new service",
 	Long: `Create a new service
 Example:
-    circuit lb create <ip:port>`,
+    circuit lb create <name> <ip:port>`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 1 {
+		if len(args) != 2 {
 			cmd.Help()
 			return
 		}
 
-		addr := args[0]
+		name := args[0]
+		addr := args[1]
+
+		if name == "" {
+			cmd.Help()
+			logrus.Fatal("you must specify a service name")
+		}
 
 		if addr == "" {
 			cmd.Help()
@@ -90,9 +103,8 @@ Example:
 			logrus.Fatalf("unknown service scheduler: %s", networkLBScheduler)
 		}
 
-		// lblc|lblcr|dh|sh|sed|nq
-
 		svc := &config.Service{
+			Name:      name,
 			Addr:      addr,
 			Protocol:  protocol,
 			Scheduler: scheduler,
@@ -102,7 +114,7 @@ Example:
 			logrus.Fatalf("error creating service: %s", err)
 		}
 
-		logrus.Infof("service %s created", addr)
+		logrus.Infof("service %s created", name)
 	},
 }
 
@@ -111,18 +123,18 @@ var networksLBRemoveCmd = &cobra.Command{
 	Short: "Remove a service",
 	Long: `Remove a service
 Example:
-    circuit lb remove <ip:port>`,
+    circuit lb remove <name>`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 1 {
 			cmd.Help()
 			return
 		}
 
-		addr := args[0]
+		name := args[0]
 
-		if addr == "" {
+		if name == "" {
 			cmd.Help()
-			logrus.Fatal("you must specify a service address")
+			logrus.Fatal("you must specify a service name")
 		}
 
 		c, err := getController(cmd)
@@ -130,25 +142,11 @@ Example:
 			logrus.Fatal(err)
 		}
 
-		var protocol config.Protocol
-		switch networkLBProtocol {
-		case "tcp":
-			protocol = config.ProtocolTCP
-		case "udp":
-			protocol = config.ProtocolUDP
-		default:
-			logrus.Fatalf("unknown service protocol: %s", networkLBProtocol)
-		}
-
-		svc := &config.Service{
-			Addr:     addr,
-			Protocol: protocol,
-		}
-		if err := c.RemoveService(svc); err != nil {
+		if err := c.RemoveService(name); err != nil {
 			logrus.Fatalf("error removing service: %s", err)
 		}
 
-		logrus.Infof("service %s removed", addr)
+		logrus.Infof("service %s removed", name)
 	},
 }
 
@@ -157,19 +155,19 @@ var networksLBAddTargetsCmd = &cobra.Command{
 	Short: "Add one or more targets to a service",
 	Long: `Add targets to a service
 Example:
-    circuit lb add <ip:port> <target:port> [target:port]`,
+    circuit lb add <name> <target:port> [target:port]`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 2 {
 			cmd.Help()
 			return
 		}
 
-		addr := args[0]
+		name := args[0]
 		targets := args[1:]
 
-		if addr == "" {
+		if name == "" {
 			cmd.Help()
-			logrus.Fatal("you must specify a service address")
+			logrus.Fatal("you must specify a service name")
 		}
 
 		if len(targets) == 0 {
@@ -182,21 +180,11 @@ Example:
 			logrus.Fatal(err)
 		}
 
-		var protocol config.Protocol
-		switch networkLBProtocol {
-		case "tcp":
-			protocol = config.ProtocolTCP
-		case "udp":
-			protocol = config.ProtocolUDP
-		default:
-			logrus.Fatalf("unknown service protocol: %s", networkLBProtocol)
-		}
-
-		if err := c.AddTargetsToService(addr, protocol, targets); err != nil {
+		if err := c.AddTargetsToService(name, targets); err != nil {
 			logrus.Fatalf("error adding targets to service: %s", err)
 		}
 
-		logrus.Infof("service %s updated", addr)
+		logrus.Infof("service %s updated", name)
 	},
 }
 
@@ -205,19 +193,19 @@ var networksLBRemoveTargetsCmd = &cobra.Command{
 	Short: "Delete one or more targets from a service",
 	Long: `Delete targets from a service
 Example:
-    circuit lb rm <ip:port> <target:port> [target:port]`,
+    circuit lb rm <name> <target:port> [target:port]`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 2 {
 			cmd.Help()
 			return
 		}
 
-		addr := args[0]
+		name := args[0]
 		targets := args[1:]
 
-		if addr == "" {
+		if name == "" {
 			cmd.Help()
-			logrus.Fatal("you must specify a service address")
+			logrus.Fatal("you must specify a service name")
 		}
 
 		if len(targets) == 0 {
@@ -230,21 +218,11 @@ Example:
 			logrus.Fatal(err)
 		}
 
-		var protocol config.Protocol
-		switch networkLBProtocol {
-		case "tcp":
-			protocol = config.ProtocolTCP
-		case "udp":
-			protocol = config.ProtocolUDP
-		default:
-			logrus.Fatalf("unknown service protocol: %s", networkLBProtocol)
-		}
-
-		if err := c.RemoveTargetsFromService(addr, protocol, targets); err != nil {
+		if err := c.RemoveTargetsFromService(name, targets); err != nil {
 			logrus.Fatalf("error removing targets from service: %s", err)
 		}
 
-		logrus.Infof("service %s updated", addr)
+		logrus.Infof("service %s updated", name)
 	},
 }
 
@@ -265,5 +243,39 @@ Example:
 		}
 
 		logrus.Info("services cleared")
+	},
+}
+
+var networksLBLsCmd = &cobra.Command{
+	Use:   "ls",
+	Short: "List services",
+	Long:  "List all services managed by Circuit",
+	Run: func(cmd *cobra.Command, args []string) {
+		c, err := getController(cmd)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		services, err := c.ListServices()
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		w := tabwriter.NewWriter(os.Stdout, 20, 1, 3, ' ', 0)
+		fmt.Fprintf(w, "NAME \tADDR \tPROTOCOL \tSCHEDULER \n")
+
+		for _, s := range services {
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s", s.Name, s.Addr, s.Protocol, s.Scheduler)
+			if networkLBDetails && len(s.Targets) > 0 {
+				fmt.Fprintf(w, "\n  Targets\n")
+				for _, t := range s.Targets {
+					fmt.Fprintf(w, "   -> %s\n", t)
+				}
+			} else {
+				fmt.Fprintf(w, "\n")
+			}
+		}
+
+		w.Flush()
 	},
 }

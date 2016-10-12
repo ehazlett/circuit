@@ -13,8 +13,9 @@ type Controller interface {
 	ResetNetworkQOS(name, iface string) error
 	// lb
 	CreateService(s *config.Service) error
-	RemoveService(s *config.Service) error
-	AddTargetsToService(serviceAddr string, protocol config.Protocol, targets []string) error
-	RemoveTargetsFromService(serviceAddr string, protocol config.Protocol, targets []string) error
+	RemoveService(name string) error
+	AddTargetsToService(serviceName string, targets []string) error
+	RemoveTargetsFromService(serviceName string, targets []string) error
 	ClearServices() error
+	ListServices() ([]*config.Service, error)
 }
