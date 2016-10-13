@@ -90,7 +90,7 @@ var RootCmd = &cobra.Command{
 					logrus.Fatal(err)
 				}
 
-				if err := c.ConnectNetwork(hook.ID, hook.Pid); err != nil {
+				if err := c.ConnectNetwork(n.Name, hook.Pid); err != nil {
 					logrus.Fatal(err)
 				}
 			}

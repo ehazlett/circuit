@@ -1,19 +1,15 @@
 package ds
 
-import (
-	"net"
-
-	"github.com/ehazlett/circuit/config"
-)
+import "github.com/ehazlett/circuit/config"
 
 type Backend interface {
 	// networks
 	GetNetwork(name string) (*config.Network, error)
 	GetNetworks() ([]*config.Network, error)
 	SaveNetwork(network *config.Network) error
-	SaveIPAddr(ip, network string) error
+	SaveIPAddr(ip, network string, containerPid int) error
 	DeleteIPAddr(ip, network string) error
-	GetNetworkIPs(name string) ([]net.IP, error)
+	GetNetworkIPs(name string) (map[string]*config.IPPeer, error)
 	DeleteNetwork(name string) error
 	// lb
 	SaveService(s *config.Service) error

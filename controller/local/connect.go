@@ -22,7 +22,7 @@ func (c *localController) ConnectNetwork(name string, containerPid int) error {
 	bridgeName := getBridgeName(name)
 	vethPair, err := createVethPair(name, bridgeName, containerPid)
 	if err != nil {
-		return fmt.Errorf("error configuring veth pair: %s", err)
+		return fmt.Errorf("error configuring veth pair %d -> %s: %s", containerPid, bridgeName, err)
 	}
 
 	logrus.Debugf("veth pair: %+v", vethPair)
@@ -66,7 +66,7 @@ func (c *localController) ConnectNetwork(name string, containerPid int) error {
 	}
 
 	// configure container interface
-	if err := c.configureContainerInterface(iface, name, bridgeNet); err != nil {
+	if err := c.configureContainerInterface(iface, name, bridgeNet, containerPid); err != nil {
 		return err
 	}
 
@@ -83,7 +83,7 @@ func (c *localController) ConnectNetwork(name string, containerPid int) error {
 	return nil
 }
 
-func (c *localController) configureContainerInterface(iface netlink.Link, networkName string, bridgeNet *net.IPNet) error {
+func (c *localController) configureContainerInterface(iface netlink.Link, networkName string, bridgeNet *net.IPNet, containerPid int) error {
 	if err := netlink.LinkSetDown(iface); err != nil {
 		return fmt.Errorf("error downing interface: %s", err)
 	}
@@ -97,7 +97,7 @@ func (c *localController) configureContainerInterface(iface netlink.Link, networ
 		return fmt.Errorf("error getting container peer interface: %s", err)
 	}
 	// allocate IP for peer
-	ip, err := c.ipam.AllocateIP(bridgeNet, networkName)
+	ip, err := c.ipam.AllocateIP(bridgeNet, networkName, containerPid)
 	if err != nil {
 		return err
 	}
@@ -135,7 +135,7 @@ func (c *localController) configureContainerInterface(iface netlink.Link, networ
 }
 
 func (c *localController) configureLocalInterface(networkName string, bridgeNet *net.IPNet, containerPid int) error {
-	localIP, err := c.ipam.AllocateIP(bridgeNet, networkName)
+	localIP, err := c.ipam.AllocateIP(bridgeNet, networkName, containerPid)
 	if err != nil {
 		return err
 	}

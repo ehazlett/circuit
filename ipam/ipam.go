@@ -20,7 +20,7 @@ func NewIPAM(b ds.Backend) (*IPAM, error) {
 	}, nil
 }
 
-func (i *IPAM) AllocateIP(subnet *net.IPNet, networkName string) (net.IP, error) {
+func (i *IPAM) AllocateIP(subnet *net.IPNet, networkName string, containerPid int) (net.IP, error) {
 	logrus.Debugf("allocating IP for subnet: %v", subnet)
 	// TODO: allocate IP from pool
 	o := subnet.IP.To4()
@@ -37,17 +37,34 @@ func (i *IPAM) AllocateIP(subnet *net.IPNet, networkName string) (net.IP, error)
 	ip := net.IPv4(o[0], o[1], o[2], byte(d))
 
 	// save to ds
-	if err := i.ds.SaveIPAddr(ip.String(), networkName); err != nil {
+	if err := i.ds.SaveIPAddr(ip.String(), networkName, containerPid); err != nil {
 		return ip, err
 	}
 
 	return ip, nil
 }
 
-func (i *IPAM) ReleaseIP(ip net.IP, networkName string) error {
+func (i *IPAM) ReleaseIP(networkName string, ip string) error {
 	// TODO: release IP back to pool
-	if err := i.ds.DeleteIPAddr(ip.String(), networkName); err != nil {
+	if err := i.ds.DeleteIPAddr(ip, networkName); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (i *IPAM) ReleaseIPsForPid(networkName string, containerPid int) error {
+	network, err := i.ds.GetNetwork(networkName)
+	if err != nil {
+		return err
+	}
+
+	for _, p := range network.IPs {
+		if p.Pid == containerPid {
+			if err := i.ReleaseIP(networkName, p.IP); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil

@@ -9,16 +9,20 @@ import (
 )
 
 // DisconnectNetwork disconnects a container from a network
-func (c *localController) DisconnectNetwork(name string, containerPid int) error {
+func (c *localController) DisconnectNetwork(networkName string, containerPid int) error {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
-	logrus.Debugf("disconnecting %d from networks %s", containerPid, name)
+	logrus.Debugf("disconnecting %d from networks %s", containerPid, networkName)
 
-	localPeerName := getLocalPeerName(name, containerPid)
+	localPeerName := getLocalPeerName(networkName, containerPid)
 	iface, err := netlink.LinkByName(localPeerName)
 	if err != nil {
 		return fmt.Errorf("error getting local peer link: %s", err)
+	}
+
+	if err := c.ipam.ReleaseIPsForPid(networkName, containerPid); err != nil {
+		return err
 	}
 
 	if err := netlink.LinkSetDown(iface); err != nil {

@@ -3,6 +3,7 @@ package local
 import (
 	"os"
 	"path/filepath"
+	"sync"
 )
 
 const (
@@ -15,11 +16,13 @@ const (
 
 type localDS struct {
 	statePath string
+	lock      *sync.Mutex
 }
 
 func NewLocalDS(statePath string) (*localDS, error) {
 	l := &localDS{
 		statePath: statePath,
+		lock:      &sync.Mutex{},
 	}
 
 	dirs := []string{networksPath, servicesPath}

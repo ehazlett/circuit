@@ -18,7 +18,7 @@ func (l *localDS) SaveService(s *config.Service) error {
 	servicePath := l.servicePath(s.Name)
 	configPath := filepath.Join(servicePath, configName)
 
-	if err := saveData(s, configPath); err != nil {
+	if err := l.saveData(s, configPath); err != nil {
 		return err
 	}
 
@@ -100,7 +100,7 @@ func (l *localDS) AddTargetToService(serviceName, target string) error {
 	}
 
 	targets = append(current, target)
-	if err := saveData(targets, targetConfigPath); err != nil {
+	if err := l.saveData(targets, targetConfigPath); err != nil {
 		return err
 	}
 
@@ -129,7 +129,7 @@ func (l *localDS) RemoveTargetFromService(serviceName, target string) error {
 		}
 	}
 
-	if err := saveData(targets, targetConfigPath); err != nil {
+	if err := l.saveData(targets, targetConfigPath); err != nil {
 		return err
 	}
 

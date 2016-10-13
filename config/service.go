@@ -23,9 +23,9 @@ const (
 )
 
 type Service struct {
-	Name      string
-	Addr      string
-	Protocol  Protocol
-	Scheduler Scheduler
-	Targets   []string
+	Name      string    `json:",omitempty"`
+	Addr      string    `json:",omitempty"`
+	Protocol  Protocol  `json:",omitempty"`
+	Scheduler Scheduler `json:",omitempty"`
+	Targets   []string  `json:",omitempty"`
 }

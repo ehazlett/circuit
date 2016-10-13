@@ -3,7 +3,6 @@ package local
 import (
 	"encoding/json"
 	"io/ioutil"
-	"net"
 	"os"
 	"path/filepath"
 
@@ -24,7 +23,8 @@ func (l *localDS) SaveNetwork(network *config.Network) error {
 	netPath := l.netPath(network.Name)
 	configPath := filepath.Join(netPath, configName)
 
-	if err := saveData(network, configPath); err != nil {
+	logrus.Debugf("saving network: %+v", network)
+	if err := l.saveData(network, configPath); err != nil {
 		return err
 	}
 
@@ -59,82 +59,52 @@ func (l *localDS) DeleteNetwork(name string) error {
 	return os.RemoveAll(netPath)
 }
 
-func (l *localDS) SaveIPAddr(ip, network string) error {
-	netPath := l.netPath(network)
-	ipConfigPath := filepath.Join(netPath, ipConfigName)
-	if _, err := os.Stat(ipConfigPath); err != nil {
-		// ignore not exists error; it's the first one
-		if !os.IsNotExist(err) {
-			return err
-		}
-	}
-
-	ips := []net.IP{}
-	currentIPs, err := l.GetNetworkIPs(network)
+func (l *localDS) SaveIPAddr(ip, networkName string, containerPid int) error {
+	network, err := l.GetNetwork(networkName)
 	if err != nil {
 		return err
 	}
+	logrus.Debugf("network: %+v", network)
+	if network.IPs == nil {
+		network.IPs = map[string]*config.IPPeer{}
+	}
 
-	ips = append(currentIPs, net.ParseIP(ip))
-	if err := saveData(ips, ipConfigPath); err != nil {
+	network.IPs[ip] = &config.IPPeer{
+		IP:  ip,
+		Pid: containerPid,
+	}
+
+	if err := l.SaveNetwork(network); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (l *localDS) DeleteIPAddr(ip, network string) error {
-	// TODO: improve this with a map
-	netPath := l.netPath(network)
-	ipConfigPath := filepath.Join(netPath, ipConfigName)
-	if _, err := os.Stat(ipConfigPath); err != nil {
-		// if there are no IPs configured then there is nothing to delete
-		if os.IsNotExist(err) {
-			return nil
-		} else {
-			return err
-		}
-	}
-	ips := []net.IP{}
-	currentIPs, err := l.GetNetworkIPs(network)
+func (l *localDS) DeleteIPAddr(ip, networkName string) error {
+	network, err := l.GetNetwork(networkName)
 	if err != nil {
 		return err
 	}
 
-	for _, i := range currentIPs {
-		if i.String() != ip {
-			ips = append(ips, i)
-		}
+	if _, ok := network.IPs[ip]; ok {
+		delete(network.IPs, ip)
 	}
 
-	if err := saveData(ips, ipConfigPath); err != nil {
+	if err := l.SaveNetwork(network); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (l *localDS) GetNetworkIPs(name string) ([]net.IP, error) {
-	ips := []net.IP{}
-	ipConfigPath := filepath.Join(l.netPath(name), ipConfigName)
-	if _, err := os.Stat(ipConfigPath); err != nil {
-		if os.IsNotExist(err) {
-			return ips, nil
-		} else {
-			return nil, err
-		}
-	}
-
-	data, err := ioutil.ReadFile(ipConfigPath)
+func (l *localDS) GetNetworkIPs(name string) (map[string]*config.IPPeer, error) {
+	network, err := l.GetNetwork(name)
 	if err != nil {
-		return ips, nil
+		return nil, err
 	}
 
-	if err := json.Unmarshal(data, &ips); err != nil {
-		return ips, err
-	}
-
-	return ips, nil
+	return network.IPs, nil
 }
 
 func (l *localDS) GetNetworks() ([]*config.Network, error) {
@@ -157,7 +127,10 @@ func (l *localDS) GetNetworks() ([]*config.Network, error) {
 	return networks, nil
 }
 
-func saveData(d interface{}, fPath string) error {
+func (l *localDS) saveData(d interface{}, fPath string) error {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+
 	data, err := json.Marshal(d)
 	if err != nil {
 		return err
