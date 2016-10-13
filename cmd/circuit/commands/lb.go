@@ -19,7 +19,8 @@ var (
 func init() {
 	networksLBCreateCmd.Flags().StringVar(&networkLBProtocol, "protocol", "tcp", "Load balancer service protocol (tcp, udp)")
 	networksLBCreateCmd.Flags().StringVar(&networkLBScheduler, "scheduler", "rr", "Load balancer service scheduler type (rr, wrr, lc, wlc)")
-	networksLBLsCmd.Flags().BoolVar(&networkLBDetails, "details", false, "Show details")
+
+	networksLBLsCmd.Flags().BoolVar(&networkLBDetails, "details", false, "Show load balancer details")
 
 	networksLBCmd.AddCommand(networksLBLsCmd)
 	networksLBCmd.AddCommand(networksLBCreateCmd)
@@ -267,9 +268,9 @@ var networksLBLsCmd = &cobra.Command{
 		for _, s := range services {
 			fmt.Fprintf(w, "%s\t%s\t%s\t%s", s.Name, s.Addr, s.Protocol, s.Scheduler)
 			if networkLBDetails && len(s.Targets) > 0 {
-				fmt.Fprintf(w, "\n  Targets\n")
+				fmt.Fprintf(w, "\n")
 				for _, t := range s.Targets {
-					fmt.Fprintf(w, "   -> %s\n", t)
+					fmt.Fprintf(w, "  -> %s\n", t)
 				}
 			} else {
 				fmt.Fprintf(w, "\n")
