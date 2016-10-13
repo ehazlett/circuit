@@ -89,6 +89,11 @@ $> circuit lb create demo 192.168.100.235:80
 INFO[0000] service demo created
 ```
 
+## Create a Load Balancer Service with Custom Scheduler
+```
+$> circuit lb create demo-wrr --scheduler wrr 192.168.100.235:80
+INFO[0000] service demo-wrr created
+```
 ## List Load Balancer Services
 ```
 $> circuit lb ls
