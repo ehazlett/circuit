@@ -5,12 +5,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var lbRemoveCmd = &cobra.Command{
-	Use:   "remove",
-	Short: "Remove a service",
-	Long: `Remove a service
+var lbDeleteCmd = &cobra.Command{
+	Use:   "delete",
+	Short: "delete a service",
+	Long: `Delete a service
 Example:
-    circuit lb remove <name>`,
+    circuit lb delete <name>`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 1 {
 			cmd.Help()

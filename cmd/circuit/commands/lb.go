@@ -16,7 +16,7 @@ func init() {
 
 	lbCmd.AddCommand(lbLsCmd)
 	lbCmd.AddCommand(lbCreateCmd)
-	lbCmd.AddCommand(lbRemoveCmd)
+	lbCmd.AddCommand(lbDeleteCmd)
 	lbCmd.AddCommand(lbAddTargetsCmd)
 	lbCmd.AddCommand(lbRemoveTargetsCmd)
 	lbCmd.AddCommand(lbClearCmd)

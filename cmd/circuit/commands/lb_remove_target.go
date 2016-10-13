@@ -6,11 +6,11 @@ import (
 )
 
 var lbRemoveTargetsCmd = &cobra.Command{
-	Use:   "delete",
-	Short: "Delete one or more targets from a service",
-	Long: `Delete targets from a service
+	Use:   "remove",
+	Short: "Remove one or more targets from a service",
+	Long: `Remove targets from a service
 Example:
-    circuit lb rm <name> <target:port> [target:port]`,
+    circuit lb remove <name> <target:port> [target:port]`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 2 {
 			cmd.Help()
