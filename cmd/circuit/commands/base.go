@@ -60,11 +60,18 @@ var RootCmd = &cobra.Command{
 				logrus.Fatal(err)
 			}
 
+			// check for env vars to override
+			networkName := os.Getenv("NETWORK")
+			if networkName == "" {
+				networkName = hook.ID
+			}
+			subnet := os.Getenv("SUBNET")
+
 			switch hook.Pid {
 			case 0:
 				// if hook is passed and pid == 0, container
 				// is stopped.  we remove the network.
-				if err := c.DeleteNetwork(hook.ID); err != nil {
+				if err := c.DeleteNetwork(networkName); err != nil {
 					logrus.Fatal(err)
 				}
 			default:
@@ -72,7 +79,11 @@ var RootCmd = &cobra.Command{
 				// 1. create a network with the container name
 				// 2. connect the container to the network
 				n := &config.Network{
-					Name: hook.ID,
+					Name: networkName,
+				}
+
+				if subnet != "" {
+					n.Subnet = subnet
 				}
 
 				if err := c.CreateNetwork(n); err != nil {
