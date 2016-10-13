@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var networksConnectCmd = &cobra.Command{
+var networkConnectCmd = &cobra.Command{
 	Use:   "connect <pid> <network>",
 	Short: "Connect a container to a network",
 	Long: `Connect a container to a network

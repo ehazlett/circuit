@@ -28,13 +28,8 @@ func init() {
 	RootCmd.PersistentFlags().BoolVarP(&debug, "debug", "D", false, "Enable debug logging")
 	RootCmd.PersistentFlags().StringVarP(&statePath, "state", "s", "file:///var/lib/circuit", "Circuit configuration and database path")
 
-	RootCmd.AddCommand(networksLsCmd)
-	RootCmd.AddCommand(networksCreateCmd)
-	RootCmd.AddCommand(networksConnectCmd)
-	RootCmd.AddCommand(networksDisconnectCmd)
-	RootCmd.AddCommand(networksLBCmd)
-	RootCmd.AddCommand(networksQosCmd)
-	RootCmd.AddCommand(networksRmCmd)
+	RootCmd.AddCommand(networkCmd)
+	RootCmd.AddCommand(lbCmd)
 }
 
 var RootCmd = &cobra.Command{

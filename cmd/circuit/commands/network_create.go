@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var networksCreateCmd = &cobra.Command{
+var networkCreateCmd = &cobra.Command{
 	Use:   "create <name> <subnet>",
 	Short: "Create a network",
 	Long: `Create a container network

@@ -19,21 +19,21 @@ var (
 )
 
 func init() {
-	networksQosSetCmd.Flags().DurationVarP(&networkQosDelay, "delay", "d", time.Second*0, "Network delay (default: 0ms)")
-	networksQosSetCmd.Flags().IntVar(&networkQosRate, "rate", 0, "Network class rate in kbit (default: unlimited)")
-	networksQosSetCmd.Flags().IntVar(&networkQosCeiling, "ceiling", 0, "Network class ceiling in kbit (default: unlimited)")
-	networksQosSetCmd.Flags().IntVar(&networkQosBuffer, "buffer", 0, "Network class buffer")
-	networksQosSetCmd.Flags().IntVar(&networkQosCbuffer, "cbuffer", 0, "Network class cbuffer")
-	networksQosSetCmd.Flags().IntVar(&networkQosPriority, "priority", 0, "Network class priority (default: 0)")
-	networksQosSetCmd.Flags().StringVarP(&networkQosInterface, "interface", "i", "", "Specify network interface to use instead of entire bridge")
+	networkQosSetCmd.Flags().DurationVarP(&networkQosDelay, "delay", "d", time.Second*0, "Network delay (default: 0ms)")
+	networkQosSetCmd.Flags().IntVar(&networkQosRate, "rate", 0, "Network class rate in kbit (default: unlimited)")
+	networkQosSetCmd.Flags().IntVar(&networkQosCeiling, "ceiling", 0, "Network class ceiling in kbit (default: unlimited)")
+	networkQosSetCmd.Flags().IntVar(&networkQosBuffer, "buffer", 0, "Network class buffer")
+	networkQosSetCmd.Flags().IntVar(&networkQosCbuffer, "cbuffer", 0, "Network class cbuffer")
+	networkQosSetCmd.Flags().IntVar(&networkQosPriority, "priority", 0, "Network class priority (default: 0)")
+	networkQosSetCmd.Flags().StringVarP(&networkQosInterface, "interface", "i", "", "Specify network interface to use instead of entire bridge")
 
-	networksQosResetCmd.Flags().StringVarP(&networkQosInterface, "interface", "i", "", "Specify network interface to use instead of entire bridge")
+	networkQosResetCmd.Flags().StringVarP(&networkQosInterface, "interface", "i", "", "Specify network interface to use instead of entire bridge")
 
-	networksQosCmd.AddCommand(networksQosSetCmd)
-	networksQosCmd.AddCommand(networksQosResetCmd)
+	networkQosCmd.AddCommand(networkQosSetCmd)
+	networkQosCmd.AddCommand(networkQosResetCmd)
 }
 
-var networksQosCmd = &cobra.Command{
+var networkQosCmd = &cobra.Command{
 	Use:   "qos",
 	Short: "Manage QOS for a network",
 	Long: `Manage quality of service for networks
@@ -41,7 +41,7 @@ Details:
     circuit qos help`,
 }
 
-var networksQosSetCmd = &cobra.Command{
+var networkQosSetCmd = &cobra.Command{
 	Use:   "set",
 	Short: "Set QOS for a network",
 	Long: `Setup quality of service for a network
@@ -88,7 +88,7 @@ Example:
 	},
 }
 
-var networksQosResetCmd = &cobra.Command{
+var networkQosResetCmd = &cobra.Command{
 	Use:   "reset",
 	Short: "Reset QOS for a network",
 	Long: `Reset quality of service for a network

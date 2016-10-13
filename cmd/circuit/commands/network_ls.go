@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var networksLsCmd = &cobra.Command{
+var networkLsCmd = &cobra.Command{
 	Use:   "ls",
 	Short: "List networks",
 	Long:  "List all networks managed by Circuit",

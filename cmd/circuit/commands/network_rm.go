@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var networksRmCmd = &cobra.Command{
+var networkRmCmd = &cobra.Command{
 	Use:   "rm",
 	Short: "Remove a network",
 	Long:  "Remove a network managed by Circuit",

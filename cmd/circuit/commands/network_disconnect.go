@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var networksDisconnectCmd = &cobra.Command{
+var networkDisconnectCmd = &cobra.Command{
 	Use:   "disconnect <pid> <network>",
 	Short: "Disconnect a container from a network",
 	Long: `Disconnect a container from a network
