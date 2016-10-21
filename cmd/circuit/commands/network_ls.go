@@ -38,7 +38,7 @@ var networkLsCmd = &cobra.Command{
 				fmt.Fprintf(w, "\t")
 				for _, p := range n.IPs {
 					if p.Type == config.ContainerPeer {
-						fmt.Fprintf(w, p.IP, " ")
+						fmt.Fprintf(w, "%s ", p.IP)
 					}
 				}
 				fmt.Fprintf(w, "\n")
