@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/ehazlett/circuit/config"
 	"github.com/ehazlett/circuit/ds"
 )
 
@@ -20,7 +21,7 @@ func NewIPAM(b ds.Backend) (*IPAM, error) {
 	}, nil
 }
 
-func (i *IPAM) AllocateIP(subnet *net.IPNet, networkName string, containerPid int) (net.IP, error) {
+func (i *IPAM) AllocateIP(subnet *net.IPNet, networkName string, containerPid int, peerType config.PeerType) (net.IP, error) {
 	logrus.Debugf("allocating IP for subnet: %v", subnet)
 	// TODO: allocate IP from pool
 	o := subnet.IP.To4()
@@ -37,7 +38,7 @@ func (i *IPAM) AllocateIP(subnet *net.IPNet, networkName string, containerPid in
 	ip := net.IPv4(o[0], o[1], o[2], byte(d))
 
 	// save to ds
-	if err := i.ds.SaveIPAddr(ip.String(), networkName, containerPid); err != nil {
+	if err := i.ds.SaveIPAddr(ip.String(), networkName, containerPid, peerType); err != nil {
 		return ip, err
 	}
 

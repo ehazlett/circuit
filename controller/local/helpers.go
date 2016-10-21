@@ -9,7 +9,12 @@ import (
 )
 
 func getBridgeName(netName string) string {
-	return controller.InterfacePrefix + "-" + netName
+	name := controller.InterfacePrefix + "-" + netName
+	if len(name) > 15 {
+		logrus.Warnf("bridge name too long; truncating")
+		name = name[0:15]
+	}
+	return name
 }
 
 func getLocalPeerName(netName string, containerPid int) string {

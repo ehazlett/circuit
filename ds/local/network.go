@@ -59,7 +59,7 @@ func (l *localDS) DeleteNetwork(name string) error {
 	return os.RemoveAll(netPath)
 }
 
-func (l *localDS) SaveIPAddr(ip, networkName string, containerPid int) error {
+func (l *localDS) SaveIPAddr(ip, networkName string, containerPid int, peerType config.PeerType) error {
 	network, err := l.GetNetwork(networkName)
 	if err != nil {
 		return err
@@ -70,8 +70,9 @@ func (l *localDS) SaveIPAddr(ip, networkName string, containerPid int) error {
 	}
 
 	network.IPs[ip] = &config.IPPeer{
-		IP:  ip,
-		Pid: containerPid,
+		IP:   ip,
+		Pid:  containerPid,
+		Type: peerType,
 	}
 
 	if err := l.SaveNetwork(network); err != nil {

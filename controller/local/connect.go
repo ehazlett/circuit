@@ -6,6 +6,7 @@ import (
 	"runtime"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/ehazlett/circuit/config"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 )
@@ -97,7 +98,7 @@ func (c *localController) configureContainerInterface(iface netlink.Link, networ
 		return fmt.Errorf("error getting container peer interface: %s", err)
 	}
 	// allocate IP for peer
-	ip, err := c.ipam.AllocateIP(bridgeNet, networkName, containerPid)
+	ip, err := c.ipam.AllocateIP(bridgeNet, networkName, containerPid, config.ContainerPeer)
 	if err != nil {
 		return err
 	}
@@ -135,7 +136,7 @@ func (c *localController) configureContainerInterface(iface netlink.Link, networ
 }
 
 func (c *localController) configureLocalInterface(networkName string, bridgeNet *net.IPNet, containerPid int) error {
-	localIP, err := c.ipam.AllocateIP(bridgeNet, networkName, containerPid)
+	localIP, err := c.ipam.AllocateIP(bridgeNet, networkName, containerPid, config.HostPeer)
 	if err != nil {
 		return err
 	}

@@ -55,7 +55,7 @@ func (c *localController) createBridge(cfg *config.Network) error {
 	attrs.MTU = defaultMTU
 	br := &netlink.Bridge{LinkAttrs: attrs}
 	if err := netlink.LinkAdd(br); err != nil {
-		return fmt.Errorf("error creating bridge: %s", err)
+		return fmt.Errorf("error creating bridge: attrs=%+v err=%s", attrs, err)
 	}
 
 	// assign ip

@@ -7,7 +7,7 @@ type Backend interface {
 	GetNetwork(name string) (*config.Network, error)
 	GetNetworks() ([]*config.Network, error)
 	SaveNetwork(network *config.Network) error
-	SaveIPAddr(ip, network string, containerPid int) error
+	SaveIPAddr(ip, network string, containerPid int, peerType config.PeerType) error
 	DeleteIPAddr(ip, network string) error
 	GetNetworkIPs(name string) (map[string]*config.IPPeer, error)
 	DeleteNetwork(name string) error
