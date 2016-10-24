@@ -10,7 +10,7 @@ import (
 var networkConnectCmd = &cobra.Command{
 	Use:   "connect",
 	Short: "Connect a container to a network",
-	Long: `Connect a container to a network
+	Long: `Connect a container (by pid) to a network
 Example:
     circuit connect 12345 foo`,
 	Run: func(cmd *cobra.Command, args []string) {
