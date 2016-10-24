@@ -6,9 +6,9 @@ import (
 )
 
 var networkRmCmd = &cobra.Command{
-	Use:   "rm",
-	Short: "Remove a network",
-	Long:  "Remove a network managed by Circuit",
+	Use:   "delete",
+	Short: "Delete a network",
+	Long:  "Delete a network managed by Circuit",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 1 {
 			cmd.Help()
@@ -30,6 +30,6 @@ var networkRmCmd = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
-		logrus.Infof("%s removed", networkName)
+		logrus.Infof("%s deleted", networkName)
 	},
 }

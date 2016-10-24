@@ -137,10 +137,10 @@ $> circuit network disconnect 4668 sandbox
 INFO[0000] disconnected container 4668 from network sandbox
 ```
 
-## Remove Network
+## Delete Network
 ```
-$> circuit network rm sandbox
-INFO[0000] sandbox removed
+$> circuit network delete sandbox
+INFO[0000] sandbox deleted
 ```
 
 # runc Hooks
