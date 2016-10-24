@@ -3,6 +3,7 @@ package controller
 import "github.com/ehazlett/circuit/config"
 
 type Controller interface {
+	// network
 	CreateNetwork(c *config.Network) error
 	ListNetworks() ([]*config.Network, error)
 	ConnectNetwork(name string, containerPid int) error
@@ -18,4 +19,6 @@ type Controller interface {
 	RemoveTargetsFromService(serviceName string, targets []string) error
 	ClearServices() error
 	ListServices() ([]*config.Service, error)
+	// util
+	Restore() error
 }

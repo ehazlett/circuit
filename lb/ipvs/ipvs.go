@@ -3,7 +3,9 @@ package ipvs
 import (
 	"fmt"
 	"net"
+	"os/exec"
 	"strconv"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/ehazlett/circuit/config"
@@ -15,7 +17,47 @@ type ipvsLB struct {
 	ds ds.Backend
 }
 
+var (
+	kernelModules = []string{
+		"ip_vs",
+		"ip_vs_rr",
+		"ip_vs_wrr",
+		"ip_vs_lc",
+		"ip_vs_wlc",
+		"ip_vs_lblc",
+		"ip_vs_lblcr",
+	}
+)
+
+func loadModules() error {
+	logrus.Debug("checking kernel modules")
+	modules, err := exec.Command("lsmod").CombinedOutput()
+	if err != nil {
+		return err
+	}
+
+	if strings.Index(string(modules), "ip_vs") > -1 {
+		logrus.Debug("modules are loaded")
+		// already loaded
+		return nil
+	}
+
+	logrus.Debug("kernel modules not found; attempting to load")
+	for _, mod := range kernelModules {
+		if out, err := exec.Command("modprobe", "-va", mod).CombinedOutput(); err != nil {
+			return fmt.Errorf("error loading ipvs module %s: %s err=%s", mod, strings.TrimSpace(string(out)), err)
+		}
+	}
+
+	return nil
+}
+
 func getIPVS() (*gnl2go.IpvsClient, error) {
+
+	if err := loadModules(); err != nil {
+		return nil, err
+	}
+
 	i := new(gnl2go.IpvsClient)
 	if err := i.Init(); err != nil {
 		return nil, err
@@ -49,6 +91,11 @@ func (i *ipvsLB) CreateService(svc *config.Service) error {
 
 	scheduler := fmt.Sprintf("%s", svc.Scheduler)
 	if err := ipvs.AddService(host, port, protocol, scheduler); err != nil {
+		if strings.Index(err.Error(), "errorcode is: 17") > -1 {
+			logrus.Debugf("service %s appears to be configured", svc.Name)
+			return nil
+		}
+
 		return fmt.Errorf("error adding ipvs service: %s", err)
 	}
 
@@ -180,6 +227,21 @@ func (i *ipvsLB) ClearServices() error {
 
 func (i *ipvsLB) GetServices() ([]*config.Service, error) {
 	return i.ds.GetServices()
+}
+
+func (i *ipvsLB) GetService(name string) (*config.Service, error) {
+	svcs, err := i.GetServices()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, svc := range svcs {
+		if svc.Name == name {
+			return svc, nil
+		}
+	}
+
+	return nil, nil
 }
 
 func getProtocol(p config.Protocol) (uint16, error) {

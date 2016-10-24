@@ -1,6 +1,7 @@
 package local
 
 import (
+	"errors"
 	"net/url"
 	"os"
 
@@ -16,6 +17,10 @@ import (
 const (
 	defaultMTU                    = 1500
 	defaultContainerInterfaceName = "eth0"
+)
+
+var (
+	ErrNetworkExists = errors.New("network already exists")
 )
 
 type localController struct {

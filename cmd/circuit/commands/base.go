@@ -30,6 +30,7 @@ func init() {
 
 	RootCmd.AddCommand(networkCmd)
 	RootCmd.AddCommand(lbCmd)
+	RootCmd.AddCommand(restoreCmd)
 }
 
 var RootCmd = &cobra.Command{

@@ -9,4 +9,5 @@ type LoadBalancer interface {
 	RemoveTargetsFromService(serviceName string, targets []string) error
 	ClearServices() error
 	GetServices() ([]*config.Service, error)
+	GetService(name string) (*config.Service, error)
 }

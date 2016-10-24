@@ -28,8 +28,17 @@ func (c *localController) CreateNetwork(cfg *config.Network) error {
 
 	// create bridge
 	if err := c.createBridge(cfg); err != nil {
+		if err == ErrNetworkExists {
+			logrus.Debugf("network appears to be configured")
+			return nil
+		}
+
 		return err
 	}
+
+	// if a new network reset IPs if specified
+	// this can happen from a restore
+	cfg.IPs = nil
 
 	if err := c.ds.SaveNetwork(cfg); err != nil {
 		return err
@@ -43,8 +52,7 @@ func (c *localController) createBridge(cfg *config.Network) error {
 	bridgeName := getBridgeName(cfg.Name)
 	_, brErr := net.InterfaceByName(bridgeName)
 	if brErr == nil {
-		logrus.Infof("network appears to be configured")
-		return nil
+		return ErrNetworkExists
 	}
 	if !strings.Contains(brErr.Error(), "no such network interface") {
 		return brErr
