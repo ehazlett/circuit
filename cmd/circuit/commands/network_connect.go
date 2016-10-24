@@ -8,7 +8,7 @@ import (
 )
 
 var networkConnectCmd = &cobra.Command{
-	Use:   "connect <pid> <network>",
+	Use:   "connect",
 	Short: "Connect a container to a network",
 	Long: `Connect a container to a network
 Example:

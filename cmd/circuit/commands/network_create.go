@@ -7,7 +7,7 @@ import (
 )
 
 var networkCreateCmd = &cobra.Command{
-	Use:   "create <name> <subnet>",
+	Use:   "create",
 	Short: "Create a network",
 	Long: `Create a container network
 Example:
