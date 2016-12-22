@@ -24,8 +24,8 @@ the internal IPAM, data service and load balancing.  External load balancer
 implementations such as HAProxy or Nginx integration  would be trivial
 to write and utilize in Circuit.
 
-Huge thanks to @jessfraz for [netns](https://github.com/jessfraz/netns) for
-inspiration.
+Huge thanks to @jessfraz [netns](https://github.com/jessfraz/netns) for
+inspiration :)
 
 # Usage
 The following show example usage of Circuit.
