@@ -24,6 +24,9 @@ the internal IPAM, data service and load balancing.  External load balancer
 implementations such as HAProxy or Nginx integration  would be trivial
 to write and utilize in Circuit.
 
+Huge thanks to @jessfraz for [netns](https://github.com/jessfraz/netns) for
+inspiration.
+
 # Usage
 The following show example usage of Circuit.
 
@@ -47,20 +50,20 @@ ID          PID         STATUS      BUNDLE         CREATED
 web-00      4668        running     /root/web-00   2016-10-12T18:45:27.787840219Z
 
 $> circuit network connect 4668 sandbox
-INFO[0000] connected container 4668 to network sandbox
+connected container 4668 to network sandbox
 ```
 
 ## Set QoS for Network
 This will set the target rate of 5mbps with a ceiling of 6mbps
 ```
 $> circuit network qos set --rate 5000 --ceiling 6000 sandbox
-INFO[0000] qos configured for sandbox
+qos configured for sandbox
 ```
 
 This will add 50ms latency to the network
 ```
 $> circuit network qos set --delay 50ms sandbox
-INFO[0000] qos configured for sandbox
+qos configured for sandbox
 ```
 
 An example ping from the container with before and after QOS:
@@ -80,19 +83,19 @@ $> ping 10.254.1.1
 ## Clear QoS for a Network
 ```
 $> circuit network qos reset sandbox
-INFO[0000] qos reset for sandbox
+qos reset for sandbox
 ```
 
 ## Create a Load Balancer Service
 ```
 $> circuit lb create demo 192.168.100.235:80
-INFO[0000] service demo created
+service demo created
 ```
 
 ## Create a Load Balancer Service with Custom Scheduler
 ```
 $> circuit lb create demo-wrr --scheduler wrr 192.168.100.235:80
-INFO[0000] service demo-wrr created
+service demo-wrr created
 ```
 ## List Load Balancer Services
 ```
@@ -104,7 +107,7 @@ demo                192.168.100.235:80   tcp                 rr
 ## Add Target to Service
 ```
 $> circuit lb add demo 10.254.1.196:80
-INFO[0000] service demo updated
+service demo updated
 ```
 
 ## List Load Balancer Services with Details
@@ -118,13 +121,13 @@ demo                192.168.100.235:80   tcp                 rr
 ## Remove Target from Service
 ```
 $> circuit lb remove demo 10.254.1.196:80
-INFO[0000] service demo updated
+service demo updated
 ```
 
 ## Remove Service
 ```
 $> circuit lb delete demo
-INFO[0000] service demo removed
+service demo removed
 ```
 
 ## Disconnect Container from Network
@@ -134,13 +137,13 @@ ID          PID         STATUS      BUNDLE         CREATED
 web-00      4668        running     /root/web-00   2016-10-12T18:45:27.787840219Z
 
 $> circuit network disconnect 4668 sandbox
-INFO[0000] disconnected container 4668 from network sandbox
+disconnected container 4668 from network sandbox
 ```
 
 ## Delete Network
 ```
 $> circuit network delete sandbox
-INFO[0000] sandbox deleted
+sandbox deleted
 ```
 
 # runc Hooks

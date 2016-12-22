@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/ehazlett/simplelog"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +24,7 @@ type runcHook struct {
 }
 
 func init() {
-	//logrus.SetFormatter(&simplelog.SimpleFormatter{})
+	logrus.SetFormatter(&simplelog.SimpleFormatter{})
 	RootCmd.PersistentFlags().BoolVarP(&debug, "debug", "D", false, "Enable debug logging")
 	RootCmd.PersistentFlags().StringVarP(&statePath, "state", "s", "file:///var/lib/circuit", "Circuit configuration and database path")
 
