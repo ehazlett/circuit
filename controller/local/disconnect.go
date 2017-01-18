@@ -21,7 +21,7 @@ func (c *localController) DisconnectNetwork(networkName string, containerPid int
 		return fmt.Errorf("error getting local peer link: %s", err)
 	}
 
-	if err := c.ipam.ReleaseIPsForPid(networkName, containerPid); err != nil {
+	if err := c.ipam.ReleasePeersForPid(networkName, containerPid); err != nil {
 		return err
 	}
 

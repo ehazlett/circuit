@@ -30,7 +30,7 @@ var networkLsCmd = &cobra.Command{
 
 		for _, n := range networks {
 			fmt.Fprintf(w, "%s\t%s\t", n.Name, n.Subnet)
-			for _, p := range n.IPs {
+			for _, p := range n.Peers {
 				if p.Type == config.ContainerPeer {
 					fmt.Fprintf(w, "%s ", p.IP)
 				}

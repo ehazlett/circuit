@@ -54,13 +54,13 @@ func (i *IPAM) ReleaseIP(networkName string, ip string) error {
 	return nil
 }
 
-func (i *IPAM) ReleaseIPsForPid(networkName string, containerPid int) error {
+func (i *IPAM) ReleasePeersForPid(networkName string, containerPid int) error {
 	network, err := i.ds.GetNetwork(networkName)
 	if err != nil {
 		return err
 	}
 
-	for _, p := range network.IPs {
+	for _, p := range network.Peers {
 		if p.Pid == containerPid {
 			if err := i.ReleaseIP(networkName, p.IP); err != nil {
 				return err

@@ -5,9 +5,7 @@ COMMIT=`git rev-parse --short HEAD`
 APP=circuit
 REPO?=ehazlett/$(APP)
 TAG?=latest
-MEDIA_SRCS=$(shell find public/ -type f \
-	-not -path "public/dist/*" \
-	-not -path "public/node_modules/*")
+DEPS=$(shell go list ./... | grep -v /vendor/)
 
 all: build
 
@@ -21,7 +19,7 @@ release: image
 	@docker push $(REPO):$(TAG)
 
 test: build
-	@go test -v ./...
+	@go test -v $(DEPS)
 
 clean:
 	@rm -rf cmd/$(APP)/$(APP)

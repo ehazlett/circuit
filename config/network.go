@@ -16,5 +16,5 @@ type IPPeer struct {
 type Network struct {
 	Name   string             `json:",omitempty"`
 	Subnet string             `json:",omitempty"`
-	IPs    map[string]*IPPeer `json:",omitempty"`
+	Peers  map[string]*IPPeer `json:",omitempty"`
 }

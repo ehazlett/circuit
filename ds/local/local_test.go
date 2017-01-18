@@ -27,9 +27,8 @@ func TestLocalSaveNetwork(t *testing.T) {
 	defer os.Remove(l.statePath)
 
 	n := &config.Network{
-		Name:           "testing",
-		Subnet:         "10.254.0.0",
-		BandwidthBytes: 2048,
+		Name:   "testing",
+		Subnet: "10.254.0.0",
 	}
 
 	if err := l.SaveNetwork(n); err != nil {

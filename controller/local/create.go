@@ -36,9 +36,9 @@ func (c *localController) CreateNetwork(cfg *config.Network) error {
 		return err
 	}
 
-	// if a new network reset IPs if specified
+	// if a new network reset Peers if specified
 	// this can happen from a restore
-	cfg.IPs = nil
+	cfg.Peers = nil
 
 	if err := c.ds.SaveNetwork(cfg); err != nil {
 		return err

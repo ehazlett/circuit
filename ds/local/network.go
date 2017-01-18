@@ -65,11 +65,11 @@ func (l *localDS) SaveIPAddr(ip, networkName string, containerPid int, peerType 
 		return err
 	}
 	logrus.Debugf("network: %+v", network)
-	if network.IPs == nil {
-		network.IPs = map[string]*config.IPPeer{}
+	if network.Peers == nil {
+		network.Peers = map[string]*config.IPPeer{}
 	}
 
-	network.IPs[ip] = &config.IPPeer{
+	network.Peers[ip] = &config.IPPeer{
 		IP:   ip,
 		Pid:  containerPid,
 		Type: peerType,
@@ -88,8 +88,8 @@ func (l *localDS) DeleteIPAddr(ip, networkName string) error {
 		return err
 	}
 
-	if _, ok := network.IPs[ip]; ok {
-		delete(network.IPs, ip)
+	if _, ok := network.Peers[ip]; ok {
+		delete(network.Peers, ip)
 	}
 
 	if err := l.SaveNetwork(network); err != nil {
@@ -99,13 +99,13 @@ func (l *localDS) DeleteIPAddr(ip, networkName string) error {
 	return nil
 }
 
-func (l *localDS) GetNetworkIPs(name string) (map[string]*config.IPPeer, error) {
+func (l *localDS) GetNetworkPeers(name string) (map[string]*config.IPPeer, error) {
 	network, err := l.GetNetwork(name)
 	if err != nil {
 		return nil, err
 	}
 
-	return network.IPs, nil
+	return network.Peers, nil
 }
 
 func (l *localDS) GetNetworks() ([]*config.Network, error) {

@@ -10,7 +10,7 @@ func (c *localController) Restore() error {
 
 	for _, network := range networks {
 		// reset network ips
-		network.IPs = nil
+		network.Peers = nil
 		if err := c.CreateNetwork(network); err != nil {
 			return err
 		}
