@@ -109,9 +109,10 @@ func (l *localDS) AddTargetToService(serviceName, target string) error {
 
 func (l *localDS) RemoveTargetFromService(serviceName, target string) error {
 	servicePath := l.servicePath(serviceName)
-	targetConfigPath := filepath.Join(servicePath, ipConfigName)
+	targetConfigPath := filepath.Join(servicePath, targetConfigName)
 	if _, err := os.Stat(targetConfigPath); err != nil {
 		if os.IsNotExist(err) {
+			logrus.Debugf("cannot find service: %s", targetConfigPath)
 			return nil
 		} else {
 			return err
@@ -122,6 +123,8 @@ func (l *localDS) RemoveTargetFromService(serviceName, target string) error {
 	if err != nil {
 		return err
 	}
+
+	logrus.Debugf("current targets: %+v", current)
 
 	for _, t := range current {
 		if t != target {
