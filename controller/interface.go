@@ -18,6 +18,7 @@ type Controller interface {
 	AddTargetsToService(serviceName string, targets []string) error
 	RemoveTargetsFromService(serviceName string, targets []string) error
 	ClearServices() error
+	GetService(serviceName string) (*config.Service, error)
 	ListServices() ([]*config.Service, error)
 	// util
 	Restore() error

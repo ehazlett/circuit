@@ -25,3 +25,7 @@ func (c *localController) ClearServices() error {
 func (c *localController) ListServices() ([]*config.Service, error) {
 	return c.lb.GetServices()
 }
+
+func (c *localController) GetService(name string) (*config.Service, error) {
+	return c.lb.GetService(name)
+}
