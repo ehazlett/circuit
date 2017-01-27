@@ -1,7 +1,7 @@
 package controller
 
 const (
-	InterfacePrefix = "circuit"
+	InterfacePrefix = "c"
 )
 
 type ControllerConfig struct {
