@@ -14,9 +14,6 @@ import (
 // must be setup using `CreateNetwork`.  This creates a veth pair for use
 // with the host and container.
 func (c *localController) ConnectNetwork(name string, containerPid int) error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
 	logrus.Debugf("connecting %s to container %d", name, containerPid)
 
 	bridgeName := getBridgeName(name)

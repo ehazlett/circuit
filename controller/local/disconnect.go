@@ -9,9 +9,6 @@ import (
 
 // DisconnectNetwork disconnects a container from a network
 func (c *localController) DisconnectNetwork(networkName string, containerPid int) error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
 	logrus.Debugf("disconnecting %d from networks %s", containerPid, networkName)
 
 	localPeerName := getLocalPeerName(networkName, containerPid)

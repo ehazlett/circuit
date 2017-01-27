@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/url"
 	"os"
-	"sync"
 
 	"github.com/ehazlett/circuit/controller"
 	"github.com/ehazlett/circuit/ds"
@@ -29,7 +28,6 @@ type localController struct {
 	ds     ds.Backend
 	ipam   *ipam.IPAM
 	lb     lb.LoadBalancer
-	lock   *sync.Mutex
 }
 
 func NewLocalController(c *controller.ControllerConfig) (*localController, error) {
@@ -41,7 +39,6 @@ func NewLocalController(c *controller.ControllerConfig) (*localController, error
 
 	l := &localController{
 		config: c,
-		lock:   &sync.Mutex{},
 	}
 
 	switch u.Scheme {
