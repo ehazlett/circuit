@@ -1,5 +1,5 @@
-hash: afa54a5d5c14f63a49c86f7dc0a3848dee0d6558a834188c0c5c943357df2014
-updated: 2017-01-26T23:46:36.51559125-05:00
+hash: 7ca67f0b48e8cdcfa8b8c14d21b0cf4b4456ef8f8f3d71226706357359da592b
+updated: 2017-01-27T00:03:00.695812927-05:00
 imports:
 - name: github.com/coreos/go-iptables
   version: 5463fbac3bcc6b990663941c2e12660d19f6b36d
@@ -24,7 +24,7 @@ imports:
   subpackages:
   - nl
 - name: github.com/vishvananda/netns
-  version: 2c9454e4fc6e2edc1a1c84e64ed3d6e662fb6991
+  version: 8ba1072b58e0c2a240eb5f6120165c7776c3e7b8
 - name: golang.org/x/sys
   version: d75a52659825e75fff6158388dddc6a5b04f9ba5
   subpackages:
