@@ -3,7 +3,7 @@ package commands
 import (
 	"time"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/ehazlett/circuit/config"
 	"github.com/spf13/cobra"
 )

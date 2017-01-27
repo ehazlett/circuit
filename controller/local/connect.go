@@ -3,10 +3,9 @@ package local
 import (
 	"fmt"
 	"net"
-	"runtime"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/ehazlett/circuit/config"
+	"github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 )
@@ -15,8 +14,8 @@ import (
 // must be setup using `CreateNetwork`.  This creates a veth pair for use
 // with the host and container.
 func (c *localController) ConnectNetwork(name string, containerPid int) error {
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
+	c.lock.Lock()
+	defer c.lock.Unlock()
 
 	logrus.Debugf("connecting %s to container %d", name, containerPid)
 

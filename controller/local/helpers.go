@@ -3,7 +3,7 @@ package local
 import (
 	"fmt"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/ehazlett/circuit/controller"
 	"github.com/vishvananda/netlink"
 )

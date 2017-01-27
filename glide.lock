@@ -1,30 +1,32 @@
 hash: afa54a5d5c14f63a49c86f7dc0a3848dee0d6558a834188c0c5c943357df2014
-updated: 2016-10-11T22:10:35.553801273-04:00
+updated: 2017-01-26T23:46:36.51559125-05:00
 imports:
 - name: github.com/coreos/go-iptables
   version: 5463fbac3bcc6b990663941c2e12660d19f6b36d
   subpackages:
   - iptables
 - name: github.com/ehazlett/simplelog
-  version: a328490a561e74e0d04750e401f9813a390777d6
+  version: 9fcd579ee7c6aae0b6ea538bc276dedf3ee98e6c
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/Sirupsen/logrus
-  version: 3ec0642a7fb6488f65b06f9040adc67e3990296a
+  version: d26492970760ca5d33129d2d799e34be5c4782eb
+- name: github.com/sirupsen/logrus
+  version: d26492970760ca5d33129d2d799e34be5c4782eb
 - name: github.com/spf13/cobra
-  version: ec2fe7859914a5106dcab4e7901633d959bfc2f4
+  version: 0f056af21f5f368e5b0646079d0094a2c64150f7
 - name: github.com/spf13/pflag
-  version: bf8481a6aebc13a8aab52e699ffe2e79771f5a3f
+  version: a9a634f3de0a7529baded7ad6b0c7467d5c6eca7
 - name: github.com/tehnerd/gnl2go
-  version: 56a2363f4132fa686205e935c7c161f4d77b25f3
+  version: 101b5c6e2d44eb00fbfe85917ffc0bf95249977b
 - name: github.com/vishvananda/netlink
   version: da7420cab5e209195f5f7387fccd4c7f48758d30
   subpackages:
   - nl
 - name: github.com/vishvananda/netns
-  version: 8ba1072b58e0c2a240eb5f6120165c7776c3e7b8
+  version: 2c9454e4fc6e2edc1a1c84e64ed3d6e662fb6991
 - name: golang.org/x/sys
-  version: 9bb9f0998d48b31547d975974935ae9b48c7a03c
+  version: d75a52659825e75fff6158388dddc6a5b04f9ba5
   subpackages:
   - unix
 testImports: []

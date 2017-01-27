@@ -4,14 +4,15 @@ import (
 	"errors"
 	"net/url"
 	"os"
+	"sync"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/ehazlett/circuit/controller"
 	"github.com/ehazlett/circuit/ds"
 	"github.com/ehazlett/circuit/ds/local"
 	"github.com/ehazlett/circuit/ipam"
 	"github.com/ehazlett/circuit/lb"
 	"github.com/ehazlett/circuit/lb/ipvs"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -28,6 +29,7 @@ type localController struct {
 	ds     ds.Backend
 	ipam   *ipam.IPAM
 	lb     lb.LoadBalancer
+	lock   *sync.Mutex
 }
 
 func NewLocalController(c *controller.ControllerConfig) (*localController, error) {
@@ -39,6 +41,7 @@ func NewLocalController(c *controller.ControllerConfig) (*localController, error
 
 	l := &localController{
 		config: c,
+		lock:   &sync.Mutex{},
 	}
 
 	switch u.Scheme {

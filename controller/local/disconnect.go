@@ -2,16 +2,15 @@ package local
 
 import (
 	"fmt"
-	"runtime"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 )
 
 // DisconnectNetwork disconnects a container from a network
 func (c *localController) DisconnectNetwork(networkName string, containerPid int) error {
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
+	c.lock.Lock()
+	defer c.lock.Unlock()
 
 	logrus.Debugf("disconnecting %d from networks %s", containerPid, networkName)
 

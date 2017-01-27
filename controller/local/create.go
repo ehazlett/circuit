@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/coreos/go-iptables/iptables"
 	"github.com/ehazlett/circuit/config"
 	"github.com/vishvananda/netlink"
