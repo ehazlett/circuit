@@ -43,7 +43,6 @@ func NewLocalController(c *controller.ControllerConfig) (*localController, error
 
 	switch u.Scheme {
 	case "file":
-		logrus.Debugf("creating state path: %s", u.Path)
 		// TODO: instantiate file backend and set in controller
 		if err := os.MkdirAll(u.Path, 0600); err != nil {
 			logrus.Fatalf("error initializing state directory: %s", err)
