@@ -6,9 +6,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/ehazlett/circuit/config"
 	"github.com/ehazlett/circuit/ds"
+	"github.com/sirupsen/logrus"
 )
 
 type IPAM struct {
@@ -46,7 +46,7 @@ func (i *IPAM) AllocateIP(subnet *net.IPNet, networkName string, containerPid in
 }
 
 func (i *IPAM) ReleaseIP(networkName string, ip string) error {
-	// TODO: release IP back to pool
+	// release IP back to pool
 	if err := i.ds.DeleteIPAddr(ip, networkName); err != nil {
 		return err
 	}
