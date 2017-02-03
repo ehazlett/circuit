@@ -2,7 +2,6 @@ package local
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -67,7 +66,7 @@ func (l *localDS) GetNetworkPeer(name string, containerPid int) (*config.PeerInf
 		}
 	}
 
-	return nil, fmt.Errorf("unable to find network peer for pid %d", containerPid)
+	return nil, ds.ErrNetworkPeerDoesNotExist
 }
 
 func (l *localDS) GetNetworkPeers(name string) (map[string]*config.PeerInfo, error) {

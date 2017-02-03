@@ -1,17 +1,25 @@
 package local
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 
+	"github.com/ehazlett/circuit/ds"
 	"github.com/sirupsen/logrus"
 )
 
 // ConnectNetwork connects a container to a network.  Note, the network
-// must be setup using `CreateNetwork`.  This creates a veth pair for use
-// with the host and container.
+// must be setup using `CreateNetwork`.
 func (c *localController) ConnectNetwork(name string, containerPid int) error {
 	logrus.Debugf("connecting %s to container %d", name, containerPid)
+	peer, err := c.ds.GetNetworkPeer(name, containerPid)
+	if err != nil && err != ds.ErrNetworkPeerDoesNotExist {
+		return err
+	}
+	if peer != nil {
+		return fmt.Errorf("container %d is already connected to network %s", containerPid, name)
+	}
 
 	tmpConfDir, err := ioutil.TempDir("", "circuit-")
 	if err != nil {
