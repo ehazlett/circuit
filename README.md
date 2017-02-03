@@ -61,8 +61,10 @@ $> circuit network create /path/to/cni.conf
 ## View Networks
 ```
 $> circuit network ls
-NAME                SUBNET
-sandbox             10.254.1.0/24
+NAME                TYPE                VERSION             PEERS
+local               ipvlan              0.2.0
+sandbox             bridge              0.2.0
+shell               bridge              0.2.0               10.30.30.2 (19022)
 ```
 
 ## Connect a Container to a Network
