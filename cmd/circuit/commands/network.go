@@ -6,7 +6,7 @@ func init() {
 	networkCmd.AddCommand(networkCreateCmd)
 	networkCmd.AddCommand(networkConnectCmd)
 	networkCmd.AddCommand(networkDisconnectCmd)
-	networkCmd.AddCommand(networkLsCmd)
+	networkCmd.AddCommand(networkListCmd)
 	networkCmd.AddCommand(networkQosCmd)
 	networkCmd.AddCommand(networkRmCmd)
 

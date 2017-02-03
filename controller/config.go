@@ -5,5 +5,6 @@ const (
 )
 
 type ControllerConfig struct {
-	DsURI string
+	DsURI   string
+	CNIPath []string
 }

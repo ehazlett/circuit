@@ -3,8 +3,8 @@ package local
 import (
 	"fmt"
 
-	"github.com/sirupsen/logrus"
 	"github.com/ehazlett/circuit/config"
+	"github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 )
 
@@ -13,7 +13,8 @@ func (c *localController) SetNetworkQOS(networkName string, cfg *config.QOSConfi
 
 	var link netlink.Link
 	if cfg.Interface == "" {
-		bridgeName := getBridgeName(networkName)
+		// TODO
+		bridgeName := ""
 		br, err := netlink.LinkByName(bridgeName)
 		if err != nil {
 			return fmt.Errorf("error getting bridge interface: %s", err)
@@ -102,7 +103,8 @@ func (c *localController) SetNetworkQOS(networkName string, cfg *config.QOSConfi
 func (c *localController) ResetNetworkQOS(networkName string, iface string) error {
 	var link netlink.Link
 	if iface == "" {
-		bridgeName := getBridgeName(networkName)
+		// TODO
+		bridgeName := ""
 		br, err := netlink.LinkByName(bridgeName)
 		if err != nil {
 			return fmt.Errorf("error getting bridge interface: %s", err)

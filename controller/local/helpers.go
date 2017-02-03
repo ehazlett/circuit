@@ -2,45 +2,110 @@ package local
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 
-	"github.com/sirupsen/logrus"
-	"github.com/ehazlett/circuit/controller"
+	"github.com/containernetworking/cni/libcni"
 	"github.com/vishvananda/netlink"
+	"github.com/vishvananda/netns"
 )
 
-func getBridgeName(netName string) string {
-	name := controller.InterfacePrefix + "-" + netName
-	if len(name) > 15 {
-		logrus.Warnf("bridge name too long; truncating")
-		name = name[0:15]
+const (
+	MaxInterfaceCount = 10
+)
+
+func (c *localController) getCniConfig(networkName string, confPath string, containerPid int, ifaceName string) (*libcni.CNIConfig, *libcni.NetworkConfig, *libcni.RuntimeConf, error) {
+	cfg, err := c.ds.GetNetwork(networkName)
+	if err != nil {
+		return nil, nil, nil, err
 	}
-	return name
+
+	f, err := os.Create(filepath.Join(confPath, "01-circuit.conf"))
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	defer f.Close()
+
+	if err := ioutil.WriteFile(filepath.Join(confPath, "01-circuit.conf"), cfg.Bytes, 0644); err != nil {
+		return nil, nil, nil, err
+	}
+
+	netconf, err := libcni.LoadConf(confPath, networkName)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	cninet := &libcni.CNIConfig{
+		Path: c.config.CNIPath,
+	}
+
+	rt := &libcni.RuntimeConf{
+		ContainerID: fmt.Sprintf("%d", containerPid),
+		NetNS:       fmt.Sprintf("/proc/%d/ns/net", containerPid),
+		IfName:      ifaceName,
+	}
+
+	return cninet, netconf, rt, nil
 }
 
-func getLocalPeerName(netName string, containerPid int) string {
-	return fmt.Sprintf("veth-%d", containerPid)
+func (c *localController) generateIfaceName(containerPid int) (string, error) {
+	originalNs, err := netns.Get()
+	if err != nil {
+		return "", err
+
+	}
+	defer originalNs.Close()
+
+	cntNs, err := netns.GetFromPid(containerPid)
+	if err != nil {
+		return "", err
+	}
+	defer cntNs.Close()
+
+	ifaceName := ""
+	netns.Set(cntNs)
+	for i := 0; i < MaxInterfaceCount; i++ {
+		n := fmt.Sprintf("eth%d", i)
+		if _, err := netlink.LinkByName(n); err != nil {
+			if !strings.Contains(err.Error(), "no such network interface") {
+				ifaceName = n
+				break
+			}
+		}
+	}
+	netns.Set(originalNs)
+
+	if ifaceName == "" {
+		return "", fmt.Errorf("unable to generate device name; maximum number of devices reached (%d)", MaxInterfaceCount)
+	}
+
+	return ifaceName, nil
 }
 
-func getContainerPeerName(netName string) string {
-	return fmt.Sprintf("veth-%s-0", netName)
-}
-
-func createVethPair(netName, bridgeName string, containerPid int) (*netlink.Veth, error) {
-	logrus.Debugf("creating veth pair: parent=%s pid=%d", bridgeName, containerPid)
-	br, err := netlink.LinkByName(bridgeName)
+func (c *localController) getContainerIfaceNames(containerPid int) ([]string, error) {
+	originalNs, err := netns.Get()
 	if err != nil {
 		return nil, err
 	}
+	defer originalNs.Close()
 
-	linkName := getLocalPeerName(netName, containerPid)
+	cntNs, err := netns.GetFromPid(containerPid)
+	if err != nil {
+		return nil, err
+	}
+	defer cntNs.Close()
 
-	logrus.Debugf("creating local peer: name=%s parent=%d", linkName, br.Attrs().Index)
-	attrs := netlink.NewLinkAttrs()
-	attrs.Name = linkName
-	attrs.MasterIndex = br.Attrs().Index
+	ifaces := []string{}
+	netns.Set(cntNs)
+	for i := 0; i < MaxInterfaceCount; i++ {
+		n := fmt.Sprintf("eth%d", i)
+		if _, err := netlink.LinkByName(n); err == nil {
+			ifaces = append(ifaces, n)
+		}
+	}
+	netns.Set(originalNs)
 
-	return &netlink.Veth{
-		LinkAttrs: attrs,
-		PeerName:  getContainerPeerName(netName),
-	}, nil
+	return ifaces, nil
 }

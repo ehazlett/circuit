@@ -8,7 +8,6 @@ import (
 	"github.com/ehazlett/circuit/controller"
 	"github.com/ehazlett/circuit/ds"
 	"github.com/ehazlett/circuit/ds/local"
-	"github.com/ehazlett/circuit/ipam"
 	"github.com/ehazlett/circuit/lb"
 	"github.com/ehazlett/circuit/lb/ipvs"
 	"github.com/sirupsen/logrus"
@@ -26,7 +25,6 @@ var (
 type localController struct {
 	config *controller.ControllerConfig
 	ds     ds.Backend
-	ipam   *ipam.IPAM
 	lb     lb.LoadBalancer
 }
 
@@ -60,13 +58,6 @@ func NewLocalController(c *controller.ControllerConfig) (*localController, error
 	default:
 		logrus.Fatalf("unknown datastore uri: %s", c.DsURI)
 	}
-
-	// IPAM
-	ipm, err := ipam.NewIPAM(l.ds)
-	if err != nil {
-		logrus.Fatalf("error initializing ipam: %s", err)
-	}
-	l.ipam = ipm
 
 	// LoadBalancing
 	lb, err := ipvs.NewIPVSLB(l.ds)

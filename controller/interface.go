@@ -1,14 +1,19 @@
 package controller
 
-import "github.com/ehazlett/circuit/config"
+import (
+	"github.com/containernetworking/cni/libcni"
+	"github.com/ehazlett/circuit/config"
+)
 
 type Controller interface {
 	// network
-	CreateNetwork(c *config.Network) error
-	ListNetworks() ([]*config.Network, error)
+	CreateNetwork(c *libcni.NetworkConfig) error
+	ListNetworks() ([]*libcni.NetworkConfig, error)
 	ConnectNetwork(name string, containerPid int) error
 	DisconnectNetwork(name string, containerPid int) error
 	DeleteNetwork(name string) error
+	ListNetworkPeers(name string) (map[string]*config.PeerInfo, error)
+	ClearNetworkPeers(name string) error
 	// qos
 	SetNetworkQOS(name string, cfg *config.QOSConfig) error
 	ResetNetworkQOS(name, iface string) error

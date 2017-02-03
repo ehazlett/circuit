@@ -9,3 +9,7 @@ import:
   version: da7420cab5e209195f5f7387fccd4c7f48758d30
 - package: github.com/vishvananda/netns
   version: 8ba1072b58e0c2a240eb5f6120165c7776c3e7b8
+- package: github.com/containernetworking/cni
+  version: ^0.4.0
+  subpackages:
+  - libcni

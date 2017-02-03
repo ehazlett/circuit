@@ -10,7 +10,7 @@ const (
 	networksPath     = "networks"
 	servicesPath     = "services"
 	configName       = "config.json"
-	ipConfigName     = "ips.json"
+	peerConfigName   = "peers.json"
 	targetConfigName = "targets.json"
 )
 
@@ -34,4 +34,12 @@ func NewLocalDS(statePath string) (*localDS, error) {
 	}
 
 	return l, nil
+}
+
+func (l *localDS) netPath(netName string) string {
+	return filepath.Join(l.statePath, networksPath, netName)
+}
+
+func (l *localDS) peerPath(netName string) string {
+	return filepath.Join(l.netPath(netName), peerConfigName)
 }

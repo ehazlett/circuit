@@ -3,9 +3,9 @@ package commands
 import (
 	"os"
 
-	"github.com/sirupsen/logrus"
-	"github.com/ehazlett/circuit/config"
+	"github.com/containernetworking/cni/libcni"
 	"github.com/ehazlett/circuit/controller"
+	"github.com/sirupsen/logrus"
 )
 
 func handleHook(c controller.Controller, hook *runcHook) error {
@@ -14,7 +14,6 @@ func handleHook(c controller.Controller, hook *runcHook) error {
 	if networkName == "" {
 		networkName = hook.ID
 	}
-	subnet := os.Getenv("SUBNET")
 
 	switch hook.Pid {
 	case 0:
@@ -27,19 +26,15 @@ func handleHook(c controller.Controller, hook *runcHook) error {
 		// if hook is passed and pid != 0, we do the following:
 		// 1. create a network with the container name
 		// 2. connect the container to the network
-		n := &config.Network{
-			Name: networkName,
-		}
 
-		if subnet != "" {
-			n.Subnet = subnet
-		}
+		// TODO: generate CNI config
+		cfg := &libcni.NetworkConfig{}
 
-		if err := c.CreateNetwork(n); err != nil {
+		if err := c.CreateNetwork(cfg); err != nil {
 			logrus.Fatal(err)
 		}
 
-		if err := c.ConnectNetwork(n.Name, hook.Pid); err != nil {
+		if err := c.ConnectNetwork(cfg.Network.Name, hook.Pid); err != nil {
 			logrus.Fatal(err)
 		}
 	}
