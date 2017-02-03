@@ -7,7 +7,7 @@ import (
 
 var lbDeleteCmd = &cobra.Command{
 	Use:   "delete",
-	Short: "delete a service",
+	Short: "Delete a service",
 	Long: `Delete a service
 Example:
     circuit lb delete <name>`,

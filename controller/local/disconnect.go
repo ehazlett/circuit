@@ -30,7 +30,6 @@ func (c *localController) DisconnectNetwork(name string, containerPid int) error
 	defer func() {
 	}()
 
-	// TODO: get iface for network
 	cninet, nc, rt, err := c.getCniConfig(name, tmpConfDir, containerPid, peer.IfaceName)
 	if err != nil {
 		logrus.Warnf("unable to detect peer: %s", err)

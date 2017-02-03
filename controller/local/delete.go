@@ -1,13 +1,17 @@
 package local
 
-func (c *localController) DeleteNetwork(name string) error {
-	// stop and remove bridge
-	//cfg, err := c.ds.GetNetwork(name)
-	//if err != nil {
-	//	return err
-	//}
+import "fmt"
 
-	// TODO: get interface and check for peers; if none remove
+func (c *localController) DeleteNetwork(name string) error {
+	peers, err := c.ds.GetNetworkPeers(name)
+	if err != nil {
+		return err
+	}
+
+	if len(peers) > 0 {
+		return fmt.Errorf("cannot delete network; network has peers")
+	}
+
 	if err := c.ds.DeleteNetwork(name); err != nil {
 		return err
 	}

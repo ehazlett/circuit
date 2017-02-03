@@ -14,8 +14,8 @@ func init() {
 
 var networkCmd = &cobra.Command{
 	Use:   "network",
-	Short: "Manage networks",
-	Long: `Manage networks
+	Short: "Manage Networks",
+	Long: `Manage Networks
 Details:
     circuit network help`,
 }

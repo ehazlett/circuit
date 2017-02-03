@@ -25,7 +25,7 @@ func init() {
 var lbCmd = &cobra.Command{
 	Use:   "lb",
 	Short: "Manage Load Balancing",
-	Long: `Manage load balancing
+	Long: `Manage Load Balancing
 Details:
     circuit lb help`,
 }
