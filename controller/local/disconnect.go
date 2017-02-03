@@ -27,22 +27,17 @@ func (c *localController) DisconnectNetwork(name string, containerPid int) error
 	}
 	defer os.RemoveAll(tmpConfDir)
 
-	defer func() {
-	}()
-
 	cninet, nc, rt, err := c.getCniConfig(name, tmpConfDir, containerPid, peer.IfaceName)
 	if err != nil {
 		logrus.Warnf("unable to detect peer: %s", err)
 	}
 
-	if cninet != nil {
-		if err := cninet.DelNetwork(nc, rt); err != nil {
-			return err
-		}
+	if err := cninet.DelNetwork(nc, rt); err != nil {
+		logrus.Warnf("unable to disconnect: %s", err)
 	}
 
 	if err := c.ds.DeleteNetworkPeer(name, containerPid); err != nil {
-		logrus.Error(err)
+		logrus.Fatal(err)
 	}
 
 	return nil
