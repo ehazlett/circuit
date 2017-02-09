@@ -60,7 +60,7 @@ $> circuit network create /path/to/cni.conf
 
 ## View Networks
 ```
-$> circuit network ls
+$> circuit network list
 NAME                TYPE                VERSION             PEERS
 local               ipvlan              0.2.0
 sandbox             bridge              0.2.0
@@ -123,7 +123,7 @@ service demo-wrr created
 ```
 ## List Load Balancer Services
 ```
-$> circuit lb ls
+$> circuit lb list
 NAME                ADDR                 PROTOCOL            SCHEDULER
 demo                192.168.100.235:80   tcp                 rr
 ```
@@ -136,7 +136,7 @@ service demo updated
 
 ## List Load Balancer Services with Details
 ```
-$> circuit lb ls --details
+$> circuit lb list --details
 NAME                ADDR                 PROTOCOL            SCHEDULER
 demo                192.168.100.235:80   tcp                 rr
   -> 10.254.1.196:80
