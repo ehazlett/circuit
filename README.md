@@ -183,14 +183,7 @@ as `prestart` and `poststop` hooks in a runc config:
         {
             "path": "/usr/local/bin/circuit",
             "env": [
-                "CNI_VERSION=0.2.0",
-                "CNI_TYPE=bridge",
-                "CIRCUIT_NETWORK=demo",
-                "CIRCUIT_IPAM_TYPE=host-local",
-                "CIRCUIT_IPAM_SUBNET=10.100.10.0/24",
-                "CIRCUIT_BRIDGE_NAME=cni-demo",
-                "CIRCUIT_IS_GATEWAY=1",
-                "CIRCUIT_IP_MASQ=1",
+		"CNI_CONF=/etc/cni/conf.d/bridge.conf",
                 "CNI_PATH=/path/to/cni/plugins",
                 "PATH=/bin:/usr/bin:/usr/sbin:/sbin"
             ]
@@ -200,8 +193,7 @@ as `prestart` and `poststop` hooks in a runc config:
         {
             "path": "/usr/local/bin/circuit",
             "env": [
-                "CNI_VERSION=0.2.0",
-                "CIRCUIT_NETWORK=demo",
+		"CNI_CONF=/etc/cni/conf.d/bridge.conf",
                 "CNI_PATH=/path/to/cni/plugins",
                 "PATH=/bin:/usr/bin:/usr/sbin:/sbin"
             ]
@@ -210,5 +202,3 @@ as `prestart` and `poststop` hooks in a runc config:
 },
 ...
 ```
-
-Note: Currently only the bridge CNI plugin is supported.
