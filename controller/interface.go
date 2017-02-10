@@ -13,6 +13,7 @@ type Controller interface {
 	DisconnectNetwork(name string, containerPid int) error
 	DeleteNetwork(name string) error
 	ListNetworkPeers(name string) (map[string]*config.PeerInfo, error)
+	GetNetworkPeer(name string, pid int) (*config.PeerInfo, error)
 	ClearNetworkPeers(name string) error
 	// qos
 	SetNetworkQOS(name string, cfg *config.QOSConfig) error

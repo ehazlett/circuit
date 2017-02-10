@@ -13,3 +13,7 @@ func (c *localController) ListNetworks() ([]*libcni.NetworkConfig, error) {
 func (c *localController) ListNetworkPeers(name string) (map[string]*config.PeerInfo, error) {
 	return c.ds.GetNetworkPeers(name)
 }
+
+func (c *localController) GetNetworkPeer(name string, pid int) (*config.PeerInfo, error) {
+	return c.ds.GetNetworkPeer(name, pid)
+}
