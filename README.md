@@ -183,9 +183,9 @@ as `prestart` and `poststop` hooks in a runc config:
         {
             "path": "/usr/local/bin/circuit",
             "env": [
-		"CNI_CONF=/etc/cni/conf.d/bridge.conf",
-		"CNI_PATH=/path/to/cni/plugins",
-		"PATH=/bin:/usr/bin:/usr/sbin:/sbin"
+                "CNI_CONF=/etc/cni/conf.d/bridge.conf",
+                "CNI_PATH=/path/to/cni/plugins",
+                "PATH=/bin:/usr/bin:/usr/sbin:/sbin"
             ]
         }
     ],
@@ -193,9 +193,9 @@ as `prestart` and `poststop` hooks in a runc config:
         {
             "path": "/usr/local/bin/circuit",
             "env": [
-		"CNI_CONF=/etc/cni/conf.d/bridge.conf",
-		"CNI_PATH=/path/to/cni/plugins",
-		"PATH=/bin:/usr/bin:/usr/sbin:/sbin"
+                "CNI_CONF=/etc/cni/conf.d/bridge.conf",
+                "CNI_PATH=/path/to/cni/plugins",
+                "PATH=/bin:/usr/bin:/usr/sbin:/sbin"
             ]
         }
     ]
