@@ -9,8 +9,7 @@
 
 ```
 
-Circuit manages networks for [runc](https://runc.io).  Features include
-but not limited to:
+Circuit manages networks for [runc](https://runc.io).
 
 - CNI network management (define and manage CNI networks and connectivity)
 - CNI compatible (use CNI plugins)
