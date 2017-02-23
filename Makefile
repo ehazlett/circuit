@@ -18,6 +18,8 @@ build-static:
 release: image
 	@docker push $(REPO):$(TAG)
 
+install: build
+	@sudo cp -f cmd/$(APP)/$(APP) /usr/local/bin/$(APP)
 test: build
 	@go test -v $(DEPS)
 

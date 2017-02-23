@@ -26,6 +26,10 @@ Define multiple CNI networks and connect/disconnect, load balance, etc.
 Huge thanks to @jessfraz [netns](https://github.com/jessfraz/netns) for
 inspiration :)
 
+The following assume you have CNI plugins.  Checkout the [CNI docs](https://github.com/containernetworking/cni#running-the-plugins)
+on getting started (mainly just `clone` and `./build`).  From there you can
+place those binaries somewhere on your `PATH` and it should just work.
+
 # Usage
 The following show example usage of Circuit.
 
@@ -109,6 +113,10 @@ $> ping 10.254.1.1
 $> circuit network qos reset sandbox
 qos reset for sandbox
 ```
+
+Circuit supports basic load balancing via IPVS.
+
+Note: this is experimental and the implementation may change.
 
 ## Create a Load Balancer Service
 ```

@@ -26,13 +26,15 @@ type runcHook struct {
 }
 
 func init() {
+	cniEnv := os.Getenv("CNI_PATH")
+	if cniEnv != "" {
+		cniPath = strings.Split(cniEnv, ":")
+	}
 	logrus.SetFormatter(&simplelog.SimpleFormatter{})
 	RootCmd.PersistentFlags().BoolVarP(&debug, "debug", "D", false, "Enable debug logging")
 	RootCmd.PersistentFlags().StringVarP(&statePath, "state", "s", "file:///var/lib/circuit", "Circuit configuration and database path")
-	cniPaths := strings.Split(os.Getenv("CNI_PATH"), ":")
-	cniPaths = append(cniPaths, "/var/lib/circuit/cni-plugins")
 
-	RootCmd.PersistentFlags().StringSliceVarP(&cniPath, "cni-path", "c", cniPaths, "CNI plugin path")
+	RootCmd.PersistentFlags().StringSliceVarP(&cniPath, "cni-path", "c", []string{"/var/lib/circuit/cni-plugins"}, "CNI plugin path")
 
 	RootCmd.AddCommand(networkCmd)
 	RootCmd.AddCommand(lbCmd)
