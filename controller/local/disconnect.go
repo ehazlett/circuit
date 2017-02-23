@@ -2,31 +2,42 @@ package local
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
 
+	"github.com/ehazlett/circuit/ds"
 	"github.com/sirupsen/logrus"
-	"github.com/vishvananda/netlink"
 )
 
 // DisconnectNetwork disconnects a container from a network
-func (c *localController) DisconnectNetwork(networkName string, containerPid int) error {
-	logrus.Debugf("disconnecting %d from networks %s", containerPid, networkName)
+func (c *localController) DisconnectNetwork(name string, containerPid int) error {
+	logrus.Debugf("disconnecting %d from networks %s", containerPid, name)
 
-	localPeerName := getLocalPeerName(networkName, containerPid)
-	iface, err := netlink.LinkByName(localPeerName)
+	peer, err := c.ds.GetNetworkPeer(name, containerPid)
 	if err != nil {
-		return fmt.Errorf("error getting local peer link: %s", err)
-	}
+		if err == ds.ErrNetworkPeerDoesNotExist {
+			return fmt.Errorf("container %d is not connected to network %s", containerPid, name)
+		}
 
-	if err := c.ipam.ReleasePeersForPid(networkName, containerPid); err != nil {
 		return err
 	}
+	tmpConfDir, err := ioutil.TempDir("", "circuit-")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tmpConfDir)
 
-	if err := netlink.LinkSetDown(iface); err != nil {
-		return fmt.Errorf("error downing interface: %s", err)
+	cninet, nc, rt, err := c.getCniConfig(name, tmpConfDir, containerPid, peer.IfaceName)
+	if err != nil {
+		logrus.Warnf("unable to detect peer: %s", err)
 	}
 
-	if err := netlink.LinkDel(iface); err != nil {
-		return err
+	if err := cninet.DelNetwork(nc, rt); err != nil {
+		logrus.Warnf("unable to disconnect: %s", err)
+	}
+
+	if err := c.ds.DeleteNetworkPeer(name, containerPid); err != nil {
+		logrus.Fatal(err)
 	}
 
 	return nil

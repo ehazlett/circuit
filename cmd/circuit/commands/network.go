@@ -6,7 +6,7 @@ func init() {
 	networkCmd.AddCommand(networkCreateCmd)
 	networkCmd.AddCommand(networkConnectCmd)
 	networkCmd.AddCommand(networkDisconnectCmd)
-	networkCmd.AddCommand(networkLsCmd)
+	networkCmd.AddCommand(networkListCmd)
 	networkCmd.AddCommand(networkQosCmd)
 	networkCmd.AddCommand(networkRmCmd)
 
@@ -14,8 +14,8 @@ func init() {
 
 var networkCmd = &cobra.Command{
 	Use:   "network",
-	Short: "Manage networks",
-	Long: `Manage networks
+	Short: "Manage Networks",
+	Long: `Manage Networks
 Details:
     circuit network help`,
 }

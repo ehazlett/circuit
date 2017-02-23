@@ -1,16 +1,22 @@
 package ds
 
-import "github.com/ehazlett/circuit/config"
+import (
+	"github.com/containernetworking/cni/libcni"
+	"github.com/ehazlett/circuit/config"
+)
 
 type Backend interface {
 	// networks
-	GetNetwork(name string) (*config.Network, error)
-	GetNetworks() ([]*config.Network, error)
-	SaveNetwork(network *config.Network) error
-	SaveIPAddr(ip, network string, containerPid int, peerType config.PeerType) error
-	DeleteIPAddr(ip, network string) error
-	GetNetworkPeers(name string) (map[string]*config.IPPeer, error)
+	GetNetwork(name string) (*libcni.NetworkConfig, error)
+	GetNetworks() ([]*libcni.NetworkConfig, error)
+	SaveNetwork(network *libcni.NetworkConfig) error
 	DeleteNetwork(name string) error
+	SaveNetworkPeer(name string, containerPid int, ip string, ifaceName string) error
+	DeleteNetworkPeer(name string, containerPid int) error
+	ClearNetworkPeers(name string) error
+	GetNetworkPeer(name string, containerPid int) (*config.PeerInfo, error)
+	// GetNetworkPeers returns a IP to Pid map for the network peers
+	GetNetworkPeers(name string) (map[string]*config.PeerInfo, error)
 	// lb
 	SaveService(s *config.Service) error
 	DeleteService(name string) error

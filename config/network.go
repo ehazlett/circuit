@@ -1,20 +1,15 @@
 package config
 
-type PeerType string
+import "github.com/containernetworking/cni/libcni"
 
-const (
-	ContainerPeer PeerType = "container"
-	HostPeer      PeerType = "host"
-)
-
-type IPPeer struct {
-	IP   string   `json:",omitempty"`
-	Pid  int      `json:",omitempty"`
-	Type PeerType `json:",omitempty"`
+type PeerInfo struct {
+	NetworkName  string `json:"network_name,omitempty"`
+	ContainerPid int    `json:"container_pid,omitempty"`
+	IP           string `json:"ip,omitempty"`
+	IfaceName    string `json:"iface_name,omitempty"`
 }
 
 type Network struct {
-	Name   string             `json:",omitempty"`
-	Subnet string             `json:",omitempty"`
-	Peers  map[string]*IPPeer `json:",omitempty"`
+	Name   string                `json:",omitempty"`
+	Config *libcni.NetworkConfig `json:"config"`
 }

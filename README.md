@@ -12,35 +12,63 @@
 Circuit manages networks for [runc](https://runc.io).  Features include
 but not limited to:
 
-- Network bridge creation
-- Virtual ethernet pairs for containers
+- CNI network management (define and manage CNI networks and connectivity)
+- CNI compatible (use CNI plugins)
 - Quality of service management for networks and container interfaces
 - Load balancing using IPVS
 
 Circuit has been designed for flexibility.  For example, the controller has
-been designed to be replaced.  By default, Circuit uses internal bridging
-but it could be replaced by an Open vSwitch controller.  The same goes for
-the internal IPAM, data service and load balancing.  External load balancer
-implementations such as HAProxy or Nginx integration  would be trivial
-to write and utilize in Circuit.
+been designed to be replaced.  Circuit leverages
+[CNI](https://github.com/containernetworking/cni)
+for setting up networking using various plugins such as bridge, ptp, etc.
+Define multiple CNI networks and connect/disconnect, load balance, etc.
 
 Huge thanks to @jessfraz [netns](https://github.com/jessfraz/netns) for
 inspiration :)
+
+The following assume you have CNI plugins.  Checkout the [CNI docs](https://github.com/containernetworking/cni#running-the-plugins)
+on getting started (mainly just `clone` and `./build`).  From there you can
+place those binaries somewhere on your `PATH` and it should just work.
 
 # Usage
 The following show example usage of Circuit.
 
 ## Create a Network
 
+Specify a CNI network config when creating.  For the examples following, we
+will assume a network config like so:
+
 ```
-$> circuit network create sandbox 10.254.1.0/24
+{
+    "cniVersion": "0.2.0",
+    "name": "br-sandbox",
+    "type": "bridge",
+    "bridge": "cni0",
+    "ipMasq": true,
+    "isGateway": true,
+    "ipam": {
+        "type": "host-local",
+        "subnet": "10.100.10.0/24",
+        "routes": [
+            {
+                "dst": "0.0.0.0/0"
+            }
+        ]
+    }
+}
+```
+
+```
+$> circuit network create /path/to/cni.conf
 ```
 
 ## View Networks
 ```
-$> circuit network ls
-NAME                SUBNET
-sandbox             10.254.1.0/24
+$> circuit network list
+NAME                TYPE                VERSION             PEERS
+local               ipvlan              0.2.0
+sandbox             bridge              0.2.0
+shell               bridge              0.2.0               10.30.30.2 (19022)
 ```
 
 ## Connect a Container to a Network
@@ -86,6 +114,10 @@ $> circuit network qos reset sandbox
 qos reset for sandbox
 ```
 
+Circuit supports basic load balancing via IPVS.
+
+Note: this is experimental and the implementation may change.
+
 ## Create a Load Balancer Service
 ```
 $> circuit lb create demo 192.168.100.235:80
@@ -99,7 +131,7 @@ service demo-wrr created
 ```
 ## List Load Balancer Services
 ```
-$> circuit lb ls
+$> circuit lb list
 NAME                ADDR                 PROTOCOL            SCHEDULER
 demo                192.168.100.235:80   tcp                 rr
 ```
@@ -112,7 +144,7 @@ service demo updated
 
 ## List Load Balancer Services with Details
 ```
-$> circuit lb ls --details
+$> circuit lb list --details
 NAME                ADDR                 PROTOCOL            SCHEDULER
 demo                192.168.100.235:80   tcp                 rr
   -> 10.254.1.196:80
@@ -151,48 +183,30 @@ Circuit also supports runc hooks.  This will automatically create and configure
 networks upon start / stop for runc containers.  To setup, simply add Circuit
 as `prestart` and `poststop` hooks in a runc config:
 
-This will automatically create a new network named the same as the container.
-It will also remove and cleanup upon container stop.
 ```
 ...
 
 "hooks": {
-		"prestart": [
-			{
-				"path": "/usr/local/bin/circuit"
-			}
-		],
-		"poststop": [
-			{
-				"path": "/usr/local/bin/circuit"
-			}
-		]
-	},
-
-...
-```
-
-You can also configure the network name and subnet with environment
-variables.  Specify `NETWORK` and `SUBNET` in the config to have Circuit
-create the network using the specified name and subnet:
-
-```
-...
-
-"hooks": {
-		"prestart": [
-			{
-				"path": "/usr/local/bin/circuit",
-				"env": ["NETWORK=demo", "SUBNET=10.254.200.0/24","PATH=/bin:/usr/bin:/usr/sbin:/sbin"]
-			}
-		],
-		"poststop": [
-			{
-				"path": "/usr/local/bin/circuit",
-				"env": ["NETWORK=demo", "PATH=/bin:/usr/bin:/usr/sbin:/sbin"]
-			}
-		]
-	},
-
+    "prestart": [
+        {
+            "path": "/usr/local/bin/circuit",
+            "env": [
+                "CNI_CONF=/etc/cni/conf.d/bridge.conf",
+                "CNI_PATH=/path/to/cni/plugins",
+                "PATH=/bin:/usr/bin:/usr/sbin:/sbin"
+            ]
+        }
+    ],
+    "poststop": [
+        {
+            "path": "/usr/local/bin/circuit",
+            "env": [
+                "CNI_CONF=/etc/cni/conf.d/bridge.conf",
+                "CNI_PATH=/path/to/cni/plugins",
+                "PATH=/bin:/usr/bin:/usr/sbin:/sbin"
+            ]
+        }
+    ]
+},
 ...
 ```

@@ -4,15 +4,17 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/ehazlett/simplelog"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 var (
 	debug     bool
 	statePath string
+	cniPath   []string
 )
 
 type runcHook struct {
@@ -24,9 +26,15 @@ type runcHook struct {
 }
 
 func init() {
+	cniEnv := os.Getenv("CNI_PATH")
+	if cniEnv != "" {
+		cniPath = strings.Split(cniEnv, ":")
+	}
 	logrus.SetFormatter(&simplelog.SimpleFormatter{})
 	RootCmd.PersistentFlags().BoolVarP(&debug, "debug", "D", false, "Enable debug logging")
 	RootCmd.PersistentFlags().StringVarP(&statePath, "state", "s", "file:///var/lib/circuit", "Circuit configuration and database path")
+
+	RootCmd.PersistentFlags().StringSliceVarP(&cniPath, "cni-path", "c", []string{"/var/lib/circuit/cni-plugins"}, "CNI plugin path")
 
 	RootCmd.AddCommand(networkCmd)
 	RootCmd.AddCommand(lbCmd)
@@ -39,7 +47,7 @@ var RootCmd = &cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		if debug {
 			logrus.SetLevel(logrus.DebugLevel)
-			logrus.Debug("debug enabled")
+			logrus.SetFormatter(&logrus.TextFormatter{})
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {

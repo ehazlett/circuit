@@ -8,10 +8,14 @@ func (c *localController) Restore() error {
 		return err
 	}
 
-	for _, network := range networks {
+	for _, cfg := range networks {
 		// reset network ips
-		network.Peers = nil
-		if err := c.CreateNetwork(network); err != nil {
+		if err := c.CreateNetwork(cfg); err != nil {
+			return err
+		}
+
+		// TODO: restore container connectivity
+		if err := c.ClearNetworkPeers(cfg.Network.Name); err != nil {
 			return err
 		}
 	}

@@ -1,8 +1,9 @@
 package commands
 
 import (
+	"os"
+
 	"github.com/sirupsen/logrus"
-	"github.com/ehazlett/circuit/config"
 	"github.com/spf13/cobra"
 )
 
@@ -11,10 +12,10 @@ var networkCreateCmd = &cobra.Command{
 	Short: "Create a network",
 	Long: `Create a container network
 Example:
-    circuit create sandbox 10.254.0.0/16`,
+    circuit network create <config>`,
 	ValidArgs: []string{"name", "subnet"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 2 {
+		if len(args) != 1 {
 			cmd.Help()
 			return
 		}
@@ -24,27 +25,21 @@ Example:
 			logrus.Fatal(err)
 		}
 
-		networkName := args[0]
-		networkSubnet := args[1]
+		conf := args[0]
 
-		if networkName == "" {
-			logrus.Fatal("ERR: you must specify a network name")
+		if _, err := os.Stat(conf); err != nil {
+			logrus.Fatal("ERR: you must specify a valid config path")
 		}
 
-		if networkSubnet == "" {
-			logrus.Fatal("ERR: you must specify a network subnet (i.e. 10.254.0.0/16)")
+		cfg, err := loadConfig(conf)
+		if err != nil {
+			logrus.Fatalf("ERR: unable to parse config: %s", err)
 		}
 
-		logrus.Debugf("name: %s subnet: %s", networkName, networkSubnet)
-		n := &config.Network{
-			Name:   networkName,
-			Subnet: networkSubnet,
-		}
-
-		if err := c.CreateNetwork(n); err != nil {
+		if err := c.CreateNetwork(cfg); err != nil {
 			logrus.Fatal(err)
 		}
 
-		logrus.Infof("%s created", networkName)
+		logrus.Infof("%s created", cfg.Network.Name)
 	},
 }

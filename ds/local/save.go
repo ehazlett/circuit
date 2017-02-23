@@ -6,8 +6,37 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/containernetworking/cni/libcni"
+	"github.com/ehazlett/circuit/config"
 	"github.com/sirupsen/logrus"
 )
+
+func (l *localDS) SaveNetwork(cfg *libcni.NetworkConfig) error {
+	netPath := l.netPath(cfg.Network.Name)
+	configPath := filepath.Join(netPath, configName)
+
+	if err := l.saveData(cfg, configPath); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (l *localDS) SaveNetworkPeer(name string, containerPid int, ip string, ifaceName string) error {
+	peers, err := l.GetNetworkPeers(name)
+	if err != nil {
+		return err
+	}
+
+	peers[ip] = &config.PeerInfo{
+		NetworkName:  name,
+		ContainerPid: containerPid,
+		IP:           ip,
+		IfaceName:    ifaceName,
+	}
+	peerPath := l.peerPath(name)
+	return l.saveData(peers, peerPath)
+}
 
 func (l *localDS) saveData(d interface{}, fPath string) error {
 	l.lock.Lock()
