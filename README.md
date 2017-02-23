@@ -25,12 +25,10 @@ Define multiple CNI networks and connect/disconnect, load balance, etc.
 Huge thanks to @jessfraz [netns](https://github.com/jessfraz/netns) for
 inspiration :)
 
-The following assume you have CNI plugins.  Checkout the [CNI docs](https://github.com/containernetworking/cni#running-the-plugins)
+# Usage
+The following examples assume you have CNI plugins.  Checkout the [CNI docs](https://github.com/containernetworking/cni#running-the-plugins)
 on getting started (mainly just `clone` and `./build`).  From there you can
 place those binaries somewhere on your `PATH` and it should just work.
-
-# Usage
-The following show example usage of Circuit.
 
 ## Create a Network
 
