@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/ehazlett/circuit/ds"
 	"github.com/sirupsen/logrus"
 )
@@ -37,13 +38,29 @@ func (c *localController) ConnectNetwork(name string, containerPid int) error {
 		return err
 	}
 
-	res, err := cninet.AddNetwork(nc, rt)
+	r, err := cninet.AddNetwork(nc, rt)
 	if err != nil {
 		return err
 	}
 
-	ip := res.IP4.IP.IP.String()
-	if err := c.ds.SaveNetworkPeer(name, containerPid, ip, ifaceName); err != nil {
+	res, err := current.GetResult(r)
+	if err != nil {
+		return err
+	}
+
+	result, err := res.GetAsVersion("0.3.0")
+	if err != nil {
+		return err
+	}
+
+	cr := result.(*current.Result)
+	if len(cr.IPs) == 0 {
+		return fmt.Errorf("container did not receive an IP")
+	}
+
+	ip := cr.IPs[0]
+	addr := ip.Address.IP.String()
+	if err := c.ds.SaveNetworkPeer(name, containerPid, addr, ifaceName); err != nil {
 		return err
 	}
 

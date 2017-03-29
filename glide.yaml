@@ -10,6 +10,6 @@ import:
 - package: github.com/vishvananda/netns
   version: 8ba1072b58e0c2a240eb5f6120165c7776c3e7b8
 - package: github.com/containernetworking/cni
-  version: ^0.4.0
+  version: ^0.5.1
   subpackages:
   - libcni
