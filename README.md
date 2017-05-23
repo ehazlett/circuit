@@ -37,7 +37,7 @@ will assume a network config like so:
 
 ```
 {
-    "cniVersion": "0.2.0",
+    "cniVersion": "0.3.0",
     "name": "br-sandbox",
     "type": "bridge",
     "bridge": "cni0",
@@ -63,9 +63,9 @@ $> circuit network create /path/to/cni.conf
 ```
 $> circuit network list
 NAME                TYPE                VERSION             PEERS
-local               ipvlan              0.2.0
-sandbox             bridge              0.2.0
-shell               bridge              0.2.0               10.30.30.2 (19022)
+local               ipvlan              0.3.0
+sandbox             bridge              0.3.0
+shell               bridge              0.3.0               10.30.30.2 (19022)
 ```
 
 ## Connect a Container to a Network
