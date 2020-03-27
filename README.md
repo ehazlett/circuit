@@ -8,6 +8,8 @@
 
 ```
 
+![CI](https://github.com/ehazlett/circuit/workflows/CI/badge.svg)
+
 # Circuit
 Circuit is a container network management application for [containerd](https://github.com/containerd/containerd) using
 [CNI](https://github.com/containernetworking/cni).
