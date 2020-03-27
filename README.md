@@ -82,7 +82,7 @@ $> ctr run -t docker.io/library/alpine:latest shell sh
 
 Now connect the `shell` container to the `ctr0` network:
 
-Note: make sure to have the CNI plugins [installed](https://github.com/containernetworking/plugins/releases).
+Note: make sure to have the CNI plugins [installed](https://github.com/containernetworking/plugins/releases) to `/opt/containerd/bin` (can be changed with `--cni-path`).
 
 ```
 $> circuit network connect shell ctr0
