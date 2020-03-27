@@ -1,209 +1,146 @@
 ```
- ________  ___  ________  ________  ___  ___  ___  _________
-|\   ____\|\  \|\   __  \|\   ____\|\  \|\  \|\  \|\___   ___\
-\ \  \___|\ \  \ \  \|\  \ \  \___|\ \  \\\  \ \  \|___ \  \_|
- \ \  \    \ \  \ \   _  _\ \  \    \ \  \\\  \ \  \   \ \  \
-  \ \  \____\ \  \ \  \\  \\ \  \____\ \  \\\  \ \  \   \ \  \
-   \ \_______\ \__\ \__\\ _\\ \_______\ \_______\ \__\   \ \__\
-    \|_______|\|__|\|__|\|__|\|_______|\|_______|\|__|    \|__|
+      _                _ _
+     (_)              (_) |
+  ___ _ _ __ ___ _   _ _| |_
+ / __| | '__/ __| | | | | __|
+| (__| | | | (__| |_| | | |_
+ \___|_|_|  \___|\__,_|_|\__|
 
 ```
 
-Circuit manages networks for [runc](https://runc.io).
+# Circuit
+Circuit is a container network management application for [containerd](https://github.com/containerd/containerd) using
+[CNI](https://github.com/containernetworking/cni).
 
-- CNI network management (define and manage CNI networks and connectivity)
-- CNI compatible (use CNI plugins)
-- Quality of service management for networks and container interfaces
-- Load balancing using IPVS
-
-Circuit has been designed for flexibility.  For example, the controller has
-been designed to be replaced.  Circuit leverages
-[CNI](https://github.com/containernetworking/cni)
-for setting up networking using various plugins such as bridge, ptp, etc.
-Define multiple CNI networks and connect/disconnect, load balance, etc.
-
-Huge thanks to @jessfraz [netns](https://github.com/jessfraz/netns) for
-inspiration :)
+It can be used imperitively to connect/disconnect containers to/from networks.  Circuit can also run as a daemon and
+listen for containerd events and connect/disconnect containers automatically.
 
 # Usage
-The following examples assume you have CNI plugins.  Checkout the [CNI docs](https://github.com/containernetworking/cni#running-the-plugins)
-on getting started (mainly just `clone` and `./build`).  From there you can
-place those binaries somewhere on your `PATH` and it should just work.
+The daemon and cli is combined in a single binary.
 
-## Create a Network
+## Daemon
+To run the daemon, use the `server` subcommand:
 
-Specify a CNI network config when creating.  For the examples following, we
-will assume a network config like so:
+```
+$> circuit --debug server
+```
+
+This will start the GRPC server on port `8080` by default.
+
+## CLI
+To use the CLI start the server and then use the various subcommands:
+
+Circuit network definitions are simply CNI specs.  To create a network for use with Circuit, use the `create` command.
+
+As an example, you can create a bridge network using the following config as `bridge.json`:
 
 ```
 {
-    "cniVersion": "0.3.0",
-    "name": "br-sandbox",
+    "cniVersion": "0.3.1",
+    "name": "ctr0",
     "type": "bridge",
-    "bridge": "cni0",
+    "bridge": "ctr0",
+    "isDefaultGateway": true,
+    "forceAddress": false,
     "ipMasq": true,
-    "isGateway": true,
+    "hairpinMode": true,
     "ipam": {
         "type": "host-local",
-        "subnet": "10.100.10.0/24",
-        "routes": [
-            {
-                "dst": "0.0.0.0/0"
-            }
-        ]
+        "subnet": "10.255.0.0/16"
     }
 }
 ```
 
-```
-$> circuit network create /path/to/cni.conf
-```
-
-## View Networks
-```
-$> circuit network list
-NAME                TYPE                VERSION             PEERS
-local               ipvlan              0.3.0
-sandbox             bridge              0.3.0
-shell               bridge              0.3.0               10.30.30.2 (19022)
-```
-
-## Connect a Container to a Network
-```
-$> runc list
-ID          PID         STATUS      BUNDLE         CREATED
-web-00      4668        running     /root/web-00   2016-10-12T18:45:27.787840219Z
-
-$> circuit network connect 4668 sandbox
-connected container 4668 to network sandbox
-```
-
-## Set QoS for Network
-This will set the target rate of 5mbps with a ceiling of 6mbps
-```
-$> circuit network qos set --rate 5000 --ceiling 6000 sandbox
-qos configured for sandbox
-```
-
-This will add 50ms latency to the network
-```
-$> circuit network qos set --delay 50ms sandbox
-qos configured for sandbox
-```
-
-An example ping from the container with before and after QOS:
+Create the network in Circuit:
 
 ```
-$> ping 10.254.1.1
-64 bytes from 10.254.1.1: icmp_seq=1 ttl=64 time=0.176 ms
-64 bytes from 10.254.1.1: icmp_seq=2 ttl=64 time=0.136 ms
-64 bytes from 10.254.1.1: icmp_seq=3 ttl=64 time=0.150 ms
-64 bytes from 10.254.1.1: icmp_seq=4 ttl=64 time=0.138 ms
-64 bytes from 10.254.1.1: icmp_seq=5 ttl=64 time=50.361 ms
-64 bytes from 10.254.1.1: icmp_seq=6 ttl=64 time=50.323 ms
-64 bytes from 10.254.1.1: icmp_seq=7 ttl=64 time=50.280 ms
-64 bytes from 10.254.1.1: icmp_seq=8 ttl=64 time=50.352 ms
+$> circuit network create ctr0 bridge.json
 ```
 
-## Clear QoS for a Network
-```
-$> circuit network qos reset sandbox
-qos reset for sandbox
-```
-
-Circuit supports basic load balancing via IPVS.
-
-Note: this is experimental and the implementation may change.
-
-## Create a Load Balancer Service
-```
-$> circuit lb create demo 192.168.100.235:80
-service demo created
-```
-
-## Create a Load Balancer Service with Custom Scheduler
-```
-$> circuit lb create demo-wrr --scheduler wrr 192.168.100.235:80
-service demo-wrr created
-```
-## List Load Balancer Services
-```
-$> circuit lb list
-NAME                ADDR                 PROTOCOL            SCHEDULER
-demo                192.168.100.235:80   tcp                 rr
-```
-
-## Add Target to Service
-```
-$> circuit lb add demo 10.254.1.196:80
-service demo updated
-```
-
-## List Load Balancer Services with Details
-```
-$> circuit lb list --details
-NAME                ADDR                 PROTOCOL            SCHEDULER
-demo                192.168.100.235:80   tcp                 rr
-  -> 10.254.1.196:80
-```
-
-## Remove Target from Service
-```
-$> circuit lb remove demo 10.254.1.196:80
-service demo updated
-```
-
-## Remove Service
-```
-$> circuit lb delete demo
-service demo removed
-```
-
-## Disconnect Container from Network
-```
-$> runc list
-ID          PID         STATUS      BUNDLE         CREATED
-web-00      4668        running     /root/web-00   2016-10-12T18:45:27.787840219Z
-
-$> circuit network disconnect 4668 sandbox
-disconnected container 4668 from network sandbox
-```
-
-## Delete Network
-```
-$> circuit network delete sandbox
-sandbox deleted
-```
-
-# runc Hooks
-Circuit also supports runc hooks.  This will automatically create and configure
-networks upon start / stop for runc containers.  To setup, simply add Circuit
-as `prestart` and `poststop` hooks in a runc config:
+You can then list networks:
 
 ```
-...
-
-"hooks": {
-    "prestart": [
-        {
-            "path": "/usr/local/bin/circuit",
-            "env": [
-                "CNI_CONF=/etc/cni/conf.d/bridge.conf",
-                "CNI_PATH=/path/to/cni/plugins",
-                "PATH=/bin:/usr/bin:/usr/sbin:/sbin"
-            ]
-        }
-    ],
-    "poststop": [
-        {
-            "path": "/usr/local/bin/circuit",
-            "env": [
-                "CNI_CONF=/etc/cni/conf.d/bridge.conf",
-                "CNI_PATH=/path/to/cni/plugins",
-                "PATH=/bin:/usr/bin:/usr/sbin:/sbin"
-            ]
-        }
-    ]
-},
-...
+$> circuit network ls
+NAME      TYPE
+ctr0      bridge
 ```
+
+Run a container with no external networking:
+
+```
+$> ctr run -t docker.io/library/alpine:latest shell sh
+/ # ip a s
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+```
+
+Now connect the `shell` container to the `ctr0` network:
+
+Note: make sure to have the CNI plugins [installed](https://github.com/containernetworking/plugins/releases).
+
+```
+$> circuit network connect shell ctr0
+connected shell to ctr0 with ip=10.255.0.2
+```
+
+Confirm that the container has the interface:
+
+```
+/ # ip a s
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+3: eth0@if45: <BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN> mtu 1500 qdisc noqueue state UP
+    link/ether 22:e0:21:33:ec:18 brd ff:ff:ff:ff:ff:ff
+    inet 10.255.0.3/16 brd 10.255.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::20e0:21ff:fe33:ec18/64 scope link
+       valid_lft forever preferred_lft forever
+```
+
+## Automatic Networking
+Circuit can run as a daemon and use containerd events to automatically connect and disconnect
+containers.
+
+Note: currently automatic connection is limited to a single network.
+
+To enable automatic connecting, use the `io.circuit.network` label when creating the container:
+
+```
+$> ctr run -t --label io.circuit.network=ctr0 docker.io/library/alpine:latest shell sh
+```
+
+There should already be an additional interface in the container:
+
+```
+/ # ip a s
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+3: eth0@if46: <BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN> mtu 1500 qdisc noqueue state UP
+    link/ether de:6a:45:37:7a:5d brd ff:ff:ff:ff:ff:ff
+    inet 10.255.0.4/16 brd 10.255.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::dc6a:45ff:fe37:7a5d/64 scope link tentative
+       valid_lft forever preferred_lft forever
+```
+
+You should also see a log message for the connect event:
+```
+DEBU[0004] task start: container=shell pid=23217
+INFO[0005] connected shell to ctr0 with ip 10.255.0.5
+```
+
+# API
+There is a GRPC API that the CLI uses for management.  This can also be used in third party applications for more control
+over container network management.

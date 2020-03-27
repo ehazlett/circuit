@@ -1,15 +1,76 @@
+/*
+  Copyright (c) Evan Hazlett
+
+  Permission is hereby granted, free of charge, to any person
+  obtaining a copy of this software and associated documentation
+  files (the "Software"), to deal in the Software without
+  restriction, including without limitation the rights to use, copy,
+  modify, merge, publish, distribute, sublicense, and/or sell copies
+  of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+  The above copyright notice and this permission notice shall be
+  included in all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+  DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+  ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+  OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 package main
 
 import (
-	"fmt"
 	"os"
 
-	"github.com/ehazlett/circuit/cmd/circuit/commands"
+	"github.com/ehazlett/circuit/version"
+	"github.com/sirupsen/logrus"
+	cli "github.com/urfave/cli/v2"
 )
 
 func main() {
-	if err := commands.RootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
+	app := cli.NewApp()
+	app.Name = version.Name
+	app.Usage = version.Description
+	app.Version = version.BuildVersion()
+	app.Flags = []cli.Flag{
+		&cli.BoolFlag{
+			Name:    "debug",
+			Aliases: []string{"D"},
+			Usage:   "enable debug logging",
+		},
+		&cli.StringFlag{
+			Name:    "address",
+			Aliases: []string{"a"},
+			Usage:   "address of server",
+			Value:   ":8080",
+		},
+		&cli.StringFlag{
+			Name:  "tls-server-cert",
+			Usage: "tls server certificate (optional)",
+		},
+		&cli.StringFlag{
+			Name:  "tls-server-key",
+			Usage: "tls server key (optional)",
+		},
+		&cli.BoolFlag{
+			Name:  "tls-skip-verify",
+			Usage: "tls skip verification",
+		},
+	}
+	app.Before = func(clix *cli.Context) error {
+		if clix.Bool("debug") {
+			logrus.SetLevel(logrus.DebugLevel)
+		}
+		return nil
+	}
+	app.Commands = []*cli.Command{
+		serverCommand,
+		networkCommand,
+	}
+
+	if err := app.Run(os.Args); err != nil {
+		logrus.Fatal(err)
 	}
 }
