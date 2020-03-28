@@ -124,6 +124,7 @@ func (s *Server) eventHandler(evt *events.Envelope) error {
 		}
 		logrus.Infof("connected %s to %s with ip %s", containerID, network, ip.String())
 	case EventDisconnect:
+		logrus.Debugf("disconnecting %s (pid: %d) from %s", containerID, pid, network)
 		if err := s.disconnect(ctx, containerID, network, pid); err != nil {
 			return err
 		}
