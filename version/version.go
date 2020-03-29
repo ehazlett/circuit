@@ -28,7 +28,7 @@ var (
 	Name = "circuit"
 
 	// Version defines the application version
-	Version = "1.0.0"
+	Version = "1.1"
 
 	// Description is the application description
 	Description = "container network management"
