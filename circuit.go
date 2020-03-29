@@ -24,4 +24,6 @@ package circuit
 const (
 	// NetworkConfigExtension is the name of the containerd extension to store the config
 	NetworkConfigExtension = "io.circuit.network"
+	// RestartLabel is the label used for automatically restarting a container upon stop
+	RestartLabel = "io.circuit.restart"
 )

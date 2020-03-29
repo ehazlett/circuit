@@ -11,11 +11,13 @@
 ![CI](https://github.com/ehazlett/circuit/workflows/CI/badge.svg)
 
 # Circuit
-Circuit is a container network management application for [containerd](https://github.com/containerd/containerd) using
-[CNI](https://github.com/containernetworking/cni).
+Circuit is a container management application for [containerd](https://github.com/containerd/containerd).
 
-It can be used imperitively to connect/disconnect containers to/from networks.  Circuit can also run as a daemon and
+It can be used imperitively to connect/disconnect containers to/from networks and also run as a daemon to
 listen for containerd events and connect/disconnect containers automatically.
+
+Circuit can also provide basic restart capabilities for containers.  By adding the `io.circuit.restart` label,
+the daemon will monitor containers and restart if they exit.
 
 # Usage
 The daemon and cli is combined in a single binary.
@@ -24,7 +26,7 @@ The daemon and cli is combined in a single binary.
 To run the daemon, use the `server` subcommand:
 
 ```
-$> circuit --debug server
+$> circuit server
 ```
 
 This will start the GRPC server on port `8080` by default.

@@ -133,6 +133,7 @@ func (s *Server) Run() error {
 	errCh := make(chan error)
 	logrus.Debug("starting event handler")
 	go s.eventListener(ctx, errCh)
+	go s.restartWatcher()
 
 	logrus.Infof("starting server on %s", s.config.GRPCAddress)
 	go func() {
