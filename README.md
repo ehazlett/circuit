@@ -109,6 +109,14 @@ Confirm that the container has the interface:
        valid_lft forever preferred_lft forever
 ```
 
+You can also see all of the container IPs:
+
+```
+$> circuit network ips shell
+NETWORK   IP              INTERFACE
+ctr0      10.255.0.3      eth0
+```
+
 ## Automatic Networking
 Circuit can run as a daemon and use containerd events to automatically connect and disconnect
 containers.

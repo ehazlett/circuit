@@ -36,6 +36,7 @@ service Circuit {
         rpc DeleteNetwork(DeleteNetworkRequest) returns (google.protobuf.Empty);
         rpc Connect(ConnectRequest) returns (ConnectResponse);
         rpc Disconnect(DisconnectRequest) returns (google.protobuf.Empty);
+        rpc GetContainerIPs(GetContainerIPsRequest) returns (GetContainerIPsResponse);
 }
 
 message CreateNetworkRequest {
@@ -89,4 +90,19 @@ message NetworkConfig {
 message ContainerNetworkConfig {
         string interface = 1;
         string ip = 2 [(gogoproto.customname) = "IP"];
+}
+
+message GetContainerIPsRequest {
+        string container = 1;
+        string network = 2;
+}
+
+message ContainerIP {
+        string network = 1;
+        string ip = 2 [(gogoproto.customname) = "IP"];
+        string interface = 3;
+}
+
+message GetContainerIPsResponse {
+        repeated ContainerIP ips = 1 [(gogoproto.customname) = "IPs"];
 }

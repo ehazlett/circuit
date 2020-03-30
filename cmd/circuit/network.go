@@ -45,6 +45,7 @@ var networkCommand = &cli.Command{
 		networkDeleteCommand,
 		networkConnectCommand,
 		networkDisconnectCommand,
+		networkIPsCommand,
 	},
 }
 
@@ -229,5 +230,40 @@ var networkDisconnectCommand = &cli.Command{
 		fmt.Printf("disconnected %s from %s\n", container, network)
 
 		return nil
+	},
+}
+
+var networkIPsCommand = &cli.Command{
+	Name:      "ips",
+	Usage:     "get container IPs",
+	ArgsUsage: "<container>",
+	Action: func(clix *cli.Context) error {
+		c, err := client.NewClient(clix.String("address"))
+		if err != nil {
+			return err
+		}
+		defer c.Close()
+
+		container := clix.Args().First()
+		if container == "" {
+			cli.ShowSubcommandHelp(clix)
+			return fmt.Errorf("container must be specified")
+		}
+
+		ctx := context.Background()
+		resp, err := c.GetContainerIPs(ctx, &api.GetContainerIPsRequest{
+			Container: container,
+		})
+		if err != nil {
+			return err
+		}
+
+		w := tabwriter.NewWriter(os.Stdout, 10, 1, 3, ' ', 0)
+		const tfmt = "%s\t%s\t%s\n"
+		fmt.Fprint(w, "NETWORK\tIP\tINTERFACE\n")
+		for _, cip := range resp.IPs {
+			fmt.Fprintf(w, tfmt, cip.Network, cip.IP, cip.Interface)
+		}
+		return w.Flush()
 	},
 }

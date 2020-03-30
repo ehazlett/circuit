@@ -262,3 +262,35 @@ func (s *Server) disconnect(ctx context.Context, containerID, networkName string
 
 	return nil
 }
+
+func (s *Server) GetContainerIPs(ctx context.Context, req *api.GetContainerIPsRequest) (*api.GetContainerIPsResponse, error) {
+	c, err := s.containerd()
+	if err != nil {
+		return nil, err
+	}
+	defer c.Close()
+
+	container, err := c.LoadContainer(ctx, req.Container)
+	if err != nil {
+		return nil, err
+	}
+
+	networkConfig, err := s.loadNetworkConfig(ctx, container)
+	if err != nil {
+		return nil, err
+	}
+
+	cIPs := []*api.ContainerIP{}
+
+	for network, cfg := range networkConfig.Networks {
+		cIPs = append(cIPs, &api.ContainerIP{
+			Network:   network,
+			IP:        cfg.IP,
+			Interface: cfg.Interface,
+		})
+	}
+
+	return &api.GetContainerIPsResponse{
+		IPs: cIPs,
+	}, nil
+}
