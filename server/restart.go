@@ -35,69 +35,78 @@ import (
 func (s *Server) restartWatcher() {
 	t := time.NewTicker(5 * time.Second)
 	for range t.C {
-		c, err := s.containerd()
-		if err != nil {
+		if err := s.checkContainers(); err != nil {
 			logrus.Error(err)
 			continue
-		}
-		ctx := context.Background()
-		containers, err := c.Containers(ctx)
-		if err != nil {
-			logrus.Error(err)
-			continue
-		}
-
-		for _, container := range containers {
-			labels, err := container.Labels(ctx)
-			if err != nil {
-				logrus.Error(err)
-				continue
-			}
-
-			if _, ok := labels[circuit.RestartLabel]; !ok {
-				continue
-			}
-
-			// check to restart
-			t, err := container.Task(ctx, nil)
-			if err != nil {
-				if !errdefs.IsNotFound(err) {
-					logrus.Error(err)
-					continue
-				}
-			}
-
-			// check for existing task
-			if t != nil {
-				// check status; start if necessary
-				st, err := t.Status(ctx)
-				if err != nil {
-					logrus.Error(err)
-					continue
-				}
-
-				switch st.Status {
-				case containerd.Running:
-					continue
-				case containerd.Stopped:
-					if _, err := t.Delete(ctx); err != nil {
-						logrus.Error(err)
-						continue
-					}
-				}
-			}
-
-			// create and start
-			task, err := container.NewTask(ctx, cio.NullIO)
-			if err != nil {
-				logrus.Error(err)
-				continue
-			}
-			if err := task.Start(ctx); err != nil {
-				logrus.Error(err)
-				continue
-			}
-
 		}
 	}
+}
+
+func (s *Server) checkContainers() error {
+	c, err := s.containerd()
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+
+	ctx := context.Background()
+	containers, err := c.Containers(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, container := range containers {
+		labels, err := container.Labels(ctx)
+		if err != nil {
+			logrus.Error(err)
+			continue
+		}
+
+		if _, ok := labels[circuit.RestartLabel]; !ok {
+			continue
+		}
+
+		// check to restart
+		t, err := container.Task(ctx, nil)
+		if err != nil {
+			if !errdefs.IsNotFound(err) {
+				logrus.Error(err)
+				continue
+			}
+		}
+
+		// check for existing task
+		if t != nil {
+			// check status; start if necessary
+			st, err := t.Status(ctx)
+			if err != nil {
+				logrus.Error(err)
+				continue
+			}
+
+			switch st.Status {
+			case containerd.Running:
+				continue
+			case containerd.Stopped:
+				if _, err := t.Delete(ctx); err != nil {
+					logrus.Error(err)
+					continue
+				}
+			}
+		}
+
+		// create and start
+		task, err := container.NewTask(ctx, cio.NullIO)
+		if err != nil {
+			logrus.Error(err)
+			continue
+		}
+		if err := task.Start(ctx); err != nil {
+			logrus.Error(err)
+			continue
+		}
+	}
+
+	return nil
+
 }
