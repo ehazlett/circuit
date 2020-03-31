@@ -72,6 +72,8 @@ type Config struct {
 	TLSServerKey string
 	// TLSInsecureSkipVerify disables certificate verification
 	TLSInsecureSkipVerify bool
+	// NATSAddr is the NATS address for clustering
+	NATSAddr string
 }
 
 // Server is the circuit server
@@ -133,6 +135,7 @@ func (s *Server) Run() error {
 	errCh := make(chan error)
 	logrus.Debug("starting event handler")
 	go s.eventListener(ctx, errCh)
+	go s.clusterListener(ctx, errCh)
 	go s.restartWatcher()
 
 	logrus.Infof("starting server on %s", s.config.GRPCAddress)

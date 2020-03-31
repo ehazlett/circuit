@@ -27,6 +27,7 @@ import (
 	"net"
 	"strings"
 
+	"github.com/containerd/containerd/errdefs"
 	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/ehazlett/circuit"
 	api "github.com/ehazlett/circuit/api/circuit/v1"
@@ -127,6 +128,45 @@ func (s *Server) GetNetwork(ctx context.Context, req *api.GetNetworkRequest) (*a
 			Type: network.Network.Type,
 			Data: network.Bytes,
 		},
+	}, nil
+}
+
+func (s *Server) GetContainerIPs(ctx context.Context, req *api.GetContainerIPsRequest) (*api.GetContainerIPsResponse, error) {
+	c, err := s.containerd()
+	if err != nil {
+		return nil, err
+	}
+	defer c.Close()
+
+	container, err := c.LoadContainer(ctx, req.Container)
+	if err != nil {
+		if !errdefs.IsNotFound(err) {
+			return nil, err
+		}
+		// attempt to lookup from cluster if configured
+		//cnt, err := s.getContainerIPFromCluster(ctx, req.Container)
+		//if err != nil {
+		//	return nil, err
+		//}
+	}
+
+	networkConfig, err := s.loadNetworkConfig(ctx, container)
+	if err != nil {
+		return nil, err
+	}
+
+	cIPs := []*api.ContainerIP{}
+
+	for network, cfg := range networkConfig.Networks {
+		cIPs = append(cIPs, &api.ContainerIP{
+			Network:   network,
+			IP:        cfg.IP,
+			Interface: cfg.Interface,
+		})
+	}
+
+	return &api.GetContainerIPsResponse{
+		IPs: cIPs,
 	}, nil
 }
 
@@ -261,36 +301,4 @@ func (s *Server) disconnect(ctx context.Context, containerID, networkName string
 	}
 
 	return nil
-}
-
-func (s *Server) GetContainerIPs(ctx context.Context, req *api.GetContainerIPsRequest) (*api.GetContainerIPsResponse, error) {
-	c, err := s.containerd()
-	if err != nil {
-		return nil, err
-	}
-	defer c.Close()
-
-	container, err := c.LoadContainer(ctx, req.Container)
-	if err != nil {
-		return nil, err
-	}
-
-	networkConfig, err := s.loadNetworkConfig(ctx, container)
-	if err != nil {
-		return nil, err
-	}
-
-	cIPs := []*api.ContainerIP{}
-
-	for network, cfg := range networkConfig.Networks {
-		cIPs = append(cIPs, &api.ContainerIP{
-			Network:   network,
-			IP:        cfg.IP,
-			Interface: cfg.Interface,
-		})
-	}
-
-	return &api.GetContainerIPsResponse{
-		IPs: cIPs,
-	}, nil
 }

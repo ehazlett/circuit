@@ -56,6 +56,11 @@ var serverCommand = &cli.Command{
 			Usage: "cni path",
 			Value: "/opt/containerd/bin",
 		},
+		&cli.StringFlag{
+			Name:  "nats-addr",
+			Usage: "join nats cluster",
+			Value: "",
+		},
 	},
 	Action: serverAction,
 }
@@ -71,6 +76,7 @@ func serverAction(clix *cli.Context) error {
 		TLSServerCertificate:  clix.String("tls-server-cert"),
 		TLSServerKey:          clix.String("tls-server-key"),
 		TLSInsecureSkipVerify: clix.Bool("tls-skip-verify"),
+		NATSAddr:              clix.String("nats-addr"),
 	}
 	srv, err := server.NewServer(cfg)
 	if err != nil {
