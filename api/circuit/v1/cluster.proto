@@ -19,57 +19,27 @@
   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
   OR OTHER DEALINGS IN THE SOFTWARE.
 */
-package client
 
-import (
-	"context"
-	"time"
+syntax = "proto3";
 
-	api "github.com/ehazlett/circuit/api/circuit/v1"
-	"google.golang.org/grpc"
-)
+package io.circuit.v1;
 
-// Client is the circuit client
-type Client struct {
-	api.CircuitClient
-	api.ClusterClient
-	conn *grpc.ClientConn
+option go_package = "github.com/ehazlett/circuit/api/circuit/v1;v1";
+
+service Cluster {
+        rpc Nodes(NodesRequest) returns (NodesResponse);
 }
 
-// NewClient returns a new client configured with the specified Stellar GRPC address and dial options
-func NewClient(addr string, opts ...grpc.DialOption) (*Client, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	if len(opts) == 0 {
-		opts = []grpc.DialOption{
-			grpc.WithInsecure(),
-		}
-	}
-
-	c, err := grpc.DialContext(ctx,
-		addr,
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	client := &Client{
-		api.NewCircuitClient(c),
-		api.NewClusterClient(c),
-		c,
-	}
-
-	return client, nil
+message NodeInfo {
+        string name = 1;
 }
 
-// Conn returns the current configured client connection
-func (c *Client) Conn() *grpc.ClientConn {
-	return c.conn
+message NodesRequest {}
+
+message NodesResponse {
+        repeated NodeInfo nodes = 1;
 }
 
-// Close closes the underlying GRPC client
-func (c *Client) Close() error {
-	return c.conn.Close()
+message ContainerIPQuery {
+        string container = 1;
 }

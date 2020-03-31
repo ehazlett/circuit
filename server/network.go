@@ -27,7 +27,6 @@ import (
 	"net"
 	"strings"
 
-	"github.com/containerd/containerd/errdefs"
 	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/ehazlett/circuit"
 	api "github.com/ehazlett/circuit/api/circuit/v1"
@@ -132,22 +131,40 @@ func (s *Server) GetNetwork(ctx context.Context, req *api.GetNetworkRequest) (*a
 }
 
 func (s *Server) GetContainerIPs(ctx context.Context, req *api.GetContainerIPsRequest) (*api.GetContainerIPsResponse, error) {
+	cIPs, err := s.getContainerIPs(ctx, req.Container)
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.GetContainerIPsResponse{
+		IPs: cIPs,
+	}, nil
+}
+
+func (s *Server) getContainerIPs(ctx context.Context, containerID string) ([]*api.ContainerIP, error) {
+	// resolve via cluster if enabled; otherwise lookup locally
+	if !s.clusterEnabled() {
+		return s.getLocalContainerIPs(ctx, containerID)
+	}
+	// cluster enabled
+	cIPs, err := s.getClusterContainerIPs(ctx, containerID, heartbeatInterval)
+	if err != nil {
+		return nil, err
+	}
+
+	return cIPs, nil
+}
+
+func (s *Server) getLocalContainerIPs(ctx context.Context, containerID string) ([]*api.ContainerIP, error) {
 	c, err := s.containerd()
 	if err != nil {
 		return nil, err
 	}
 	defer c.Close()
 
-	container, err := c.LoadContainer(ctx, req.Container)
+	container, err := c.LoadContainer(ctx, containerID)
 	if err != nil {
-		if !errdefs.IsNotFound(err) {
-			return nil, err
-		}
-		// attempt to lookup from cluster if configured
-		//cnt, err := s.getContainerIPFromCluster(ctx, req.Container)
-		//if err != nil {
-		//	return nil, err
-		//}
+		return nil, err
 	}
 
 	networkConfig, err := s.loadNetworkConfig(ctx, container)
@@ -156,7 +173,6 @@ func (s *Server) GetContainerIPs(ctx context.Context, req *api.GetContainerIPsRe
 	}
 
 	cIPs := []*api.ContainerIP{}
-
 	for network, cfg := range networkConfig.Networks {
 		cIPs = append(cIPs, &api.ContainerIP{
 			Network:   network,
@@ -165,9 +181,7 @@ func (s *Server) GetContainerIPs(ctx context.Context, req *api.GetContainerIPsRe
 		})
 	}
 
-	return &api.GetContainerIPsResponse{
-		IPs: cIPs,
-	}, nil
+	return cIPs, nil
 }
 
 func (s *Server) connect(ctx context.Context, containerID, networkName string) (net.IP, error) {

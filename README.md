@@ -19,6 +19,11 @@ listen for containerd events and connect/disconnect containers automatically.
 Circuit can also provide basic restart capabilities for containers.  By adding the `io.circuit.restart` label,
 the daemon will monitor containers and restart if they exit.
 
+Circuit can be used with a [CoreDNS](https://coredns.io/) [Plugin](https://github.com/ehazlett/circuit-coredns)
+to provide DNS responses for containers.  This is most useful with the [macvlan](https://github.com/containernetworking/plugins/tree/master/plugins/main/macvlan)
+CNI plugin.  Circuit uses [NATS](https://nats.io/) to provide basic clustering to enable container IP resolution
+across a fleet of Circuit nodes.
+
 # Usage
 The daemon and cli is combined in a single binary.
 
@@ -152,6 +157,35 @@ You should also see a log message for the connect event:
 DEBU[0004] task start: container=shell pid=23217
 INFO[0005] connected shell to ctr0 with ip 10.255.0.5
 ```
+
+# Clustering
+Circuit can be configured to use [NATS](https://nats.io/) so that when querying for the container IP
+(i.e `circuit network ips <name>`) the Circuit nodes will query each other internally and return
+all known IPs of containers with that name.  Note: you will need to setup a NATS host separately.
+
+To form a Circuit cluster, simply configure the Circuit server to connect to NATS:
+
+```
+$> circuit server --nats-addr 1.2.3.4:4222
+```
+
+You can then list all available nodes:
+
+```
+$> circuit cluster nodes
+NAME
+white-rabbit
+```
+
+You can then query for container IPs across all Circuit nodes:
+
+```
+$> circuit network ips shell
+NETWORK   IP             INTERFACE
+ctr0      10.10.214.28   eth0
+```
+
+This will query the Circuit cluster for all available IPs of containers with the name `shell`.
 
 # API
 There is a GRPC API that the CLI uses for management.  This can also be used in third party applications for more control
