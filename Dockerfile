@@ -9,7 +9,7 @@ WORKDIR /go/src/github.com/ehazlett/circuit
 ENV GO111MODULE=on
 RUN --mount=type=cache,target=/root/.cache/go-build make build
 
-FROM scratch as package
+FROM scratch as binary
 COPY --from=build /go/src/github.com/ehazlett/circuit/bin/circuit /
 
 FROM alpine:latest

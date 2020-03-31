@@ -130,6 +130,60 @@ func (s *Server) GetNetwork(ctx context.Context, req *api.GetNetworkRequest) (*a
 	}, nil
 }
 
+func (s *Server) GetContainerIPs(ctx context.Context, req *api.GetContainerIPsRequest) (*api.GetContainerIPsResponse, error) {
+	cIPs, err := s.getContainerIPs(ctx, req.Container)
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.GetContainerIPsResponse{
+		IPs: cIPs,
+	}, nil
+}
+
+func (s *Server) getContainerIPs(ctx context.Context, containerID string) ([]*api.ContainerIP, error) {
+	// resolve via cluster if enabled; otherwise lookup locally
+	if !s.clusterEnabled() {
+		return s.getLocalContainerIPs(ctx, containerID)
+	}
+	// cluster enabled
+	cIPs, err := s.getClusterContainerIPs(ctx, containerID, heartbeatInterval)
+	if err != nil {
+		return nil, err
+	}
+
+	return cIPs, nil
+}
+
+func (s *Server) getLocalContainerIPs(ctx context.Context, containerID string) ([]*api.ContainerIP, error) {
+	c, err := s.containerd()
+	if err != nil {
+		return nil, err
+	}
+	defer c.Close()
+
+	container, err := c.LoadContainer(ctx, containerID)
+	if err != nil {
+		return nil, err
+	}
+
+	networkConfig, err := s.loadNetworkConfig(ctx, container)
+	if err != nil {
+		return nil, err
+	}
+
+	cIPs := []*api.ContainerIP{}
+	for network, cfg := range networkConfig.Networks {
+		cIPs = append(cIPs, &api.ContainerIP{
+			Network:   network,
+			IP:        cfg.IP,
+			Interface: cfg.Interface,
+		})
+	}
+
+	return cIPs, nil
+}
+
 func (s *Server) connect(ctx context.Context, containerID, networkName string) (net.IP, error) {
 	c, err := s.containerd()
 	if err != nil {
@@ -261,36 +315,4 @@ func (s *Server) disconnect(ctx context.Context, containerID, networkName string
 	}
 
 	return nil
-}
-
-func (s *Server) GetContainerIPs(ctx context.Context, req *api.GetContainerIPsRequest) (*api.GetContainerIPsResponse, error) {
-	c, err := s.containerd()
-	if err != nil {
-		return nil, err
-	}
-	defer c.Close()
-
-	container, err := c.LoadContainer(ctx, req.Container)
-	if err != nil {
-		return nil, err
-	}
-
-	networkConfig, err := s.loadNetworkConfig(ctx, container)
-	if err != nil {
-		return nil, err
-	}
-
-	cIPs := []*api.ContainerIP{}
-
-	for network, cfg := range networkConfig.Networks {
-		cIPs = append(cIPs, &api.ContainerIP{
-			Network:   network,
-			IP:        cfg.IP,
-			Interface: cfg.Interface,
-		})
-	}
-
-	return &api.GetContainerIPsResponse{
-		IPs: cIPs,
-	}, nil
 }

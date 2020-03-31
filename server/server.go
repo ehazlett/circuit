@@ -27,12 +27,14 @@ import (
 	"net"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/containerd/containerd"
 	circuitapi "github.com/ehazlett/circuit/api/circuit/v1"
 	"github.com/ehazlett/circuit/server/ds"
 	"github.com/ehazlett/circuit/server/ds/local"
 	"github.com/ehazlett/circuit/version"
+	"github.com/ehazlett/ttlcache"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -49,11 +51,14 @@ var (
 	// ErrUnsupportedDatastore is returned when an unsupported datastore is specified
 	ErrUnsupportedDatastore = errors.New("unsupported datastore")
 
-	empty = &ptypes.Empty{}
+	heartbeatInterval = time.Second * 5
+	empty             = &ptypes.Empty{}
 )
 
 // Config is the metrics server configuration
 type Config struct {
+	// NodeName is the name of the node when using clustering
+	NodeName string
 	// ContainerdAddr is the containerd address
 	ContainerdAddr string
 	// ContainerdNamespace is the containerd namespace to manage
@@ -72,6 +77,8 @@ type Config struct {
 	TLSServerKey string
 	// TLSInsecureSkipVerify disables certificate verification
 	TLSInsecureSkipVerify bool
+	// NATSAddr is the NATS address for clustering
+	NATSAddr string
 }
 
 // Server is the circuit server
@@ -79,6 +86,7 @@ type Server struct {
 	config     *Config
 	ds         ds.Datastore
 	grpcServer *grpc.Server
+	cache      *ttlcache.TTLCache
 }
 
 // NewServer returns a new metrics server
@@ -110,13 +118,25 @@ func NewServer(cfg *Config) (*Server, error) {
 
 	grpcServer := grpc.NewServer(grpcOpts...)
 
+	c, err := ttlcache.NewTTLCache(heartbeatInterval * 2)
+	if err != nil {
+		return nil, err
+	}
+
 	srv := &Server{
 		config:     cfg,
 		ds:         d,
 		grpcServer: grpcServer,
+		cache:      c,
 	}
+
 	// register
 	circuitapi.RegisterCircuitServer(grpcServer, srv)
+	// register cluster service if configured
+	if cfg.NATSAddr != "" {
+		logrus.Debug("enabling cluster service")
+		circuitapi.RegisterClusterServer(grpcServer, srv)
+	}
 
 	return srv, nil
 }
@@ -133,6 +153,7 @@ func (s *Server) Run() error {
 	errCh := make(chan error)
 	logrus.Debug("starting event handler")
 	go s.eventListener(ctx, errCh)
+	go s.clusterListener(ctx, errCh)
 	go s.restartWatcher()
 
 	logrus.Infof("starting server on %s", s.config.GRPCAddress)
@@ -156,6 +177,10 @@ func (s *Server) containerd() (*containerd.Client, error) {
 		containerd.WithDefaultNamespace(s.config.ContainerdNamespace),
 		containerd.WithDefaultRuntime(defaultRuntime),
 	)
+}
+
+func (s *Server) clusterEnabled() bool {
+	return s.config.NATSAddr != ""
 }
 
 func getDatastore(uri string) (ds.Datastore, error) {

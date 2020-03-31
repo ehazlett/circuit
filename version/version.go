@@ -28,10 +28,10 @@ var (
 	Name = "circuit"
 
 	// Version defines the application version
-	Version = "1.2"
+	Version = "1.3"
 
 	// Description is the application description
-	Description = "container network management"
+	Description = "container management"
 
 	// Build will be overwritten automatically by the build system
 	Build = "-dev"

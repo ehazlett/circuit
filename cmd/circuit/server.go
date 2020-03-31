@@ -22,6 +22,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/ehazlett/circuit/server"
 	cli "github.com/urfave/cli/v2"
 )
@@ -30,12 +32,6 @@ var serverCommand = &cli.Command{
 	Name:  "server",
 	Usage: "start circuit server",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:    "network-label",
-			Aliases: []string{"l"},
-			Usage:   "label used to autoconnect containers to networks",
-			Value:   "io.circuit.network",
-		},
 		&cli.StringFlag{
 			Name:  "containerd",
 			Usage: "containerd address",
@@ -52,9 +48,25 @@ var serverCommand = &cli.Command{
 			Value: "local:///var/lib/circuit",
 		},
 		&cli.StringFlag{
+			Name:    "network-label",
+			Aliases: []string{"l"},
+			Usage:   "label used to autoconnect containers to networks",
+			Value:   "io.circuit.network",
+		},
+		&cli.StringFlag{
 			Name:  "cni-path",
 			Usage: "cni path",
 			Value: "/opt/containerd/bin",
+		},
+		&cli.StringFlag{
+			Name:  "node-name",
+			Usage: "cluster node name",
+			Value: getNodeName(),
+		},
+		&cli.StringFlag{
+			Name:  "nats-addr",
+			Usage: "join nats cluster",
+			Value: "",
 		},
 	},
 	Action: serverAction,
@@ -62,6 +74,7 @@ var serverCommand = &cli.Command{
 
 func serverAction(clix *cli.Context) error {
 	cfg := &server.Config{
+		NodeName:              clix.String("node-name"),
 		GRPCAddress:           clix.String("address"),
 		DsURI:                 clix.String("datastore"),
 		ContainerdAddr:        clix.String("containerd"),
@@ -71,6 +84,7 @@ func serverAction(clix *cli.Context) error {
 		TLSServerCertificate:  clix.String("tls-server-cert"),
 		TLSServerKey:          clix.String("tls-server-key"),
 		TLSInsecureSkipVerify: clix.Bool("tls-skip-verify"),
+		NATSAddr:              clix.String("nats-addr"),
 	}
 	srv, err := server.NewServer(cfg)
 	if err != nil {
@@ -78,4 +92,12 @@ func serverAction(clix *cli.Context) error {
 	}
 
 	return srv.Run()
+}
+
+func getNodeName() string {
+	h, err := os.Hostname()
+	if err != nil {
+		return "unknown"
+	}
+	return h
 }

@@ -19,57 +19,52 @@
   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
   OR OTHER DEALINGS IN THE SOFTWARE.
 */
-package client
+package main
 
 import (
 	"context"
-	"time"
+	"fmt"
+	"os"
+	"text/tabwriter"
 
 	api "github.com/ehazlett/circuit/api/circuit/v1"
-	"google.golang.org/grpc"
+	"github.com/ehazlett/circuit/client"
+	cli "github.com/urfave/cli/v2"
 )
 
-// Client is the circuit client
-type Client struct {
-	api.CircuitClient
-	api.ClusterClient
-	conn *grpc.ClientConn
+var clusterCommand = &cli.Command{
+	Name:  "cluster",
+	Usage: "cluster management",
+	Flags: []cli.Flag{},
+	Subcommands: []*cli.Command{
+		clusterNodesCommand,
+	},
 }
 
-// NewClient returns a new client configured with the specified Stellar GRPC address and dial options
-func NewClient(addr string, opts ...grpc.DialOption) (*Client, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	if len(opts) == 0 {
-		opts = []grpc.DialOption{
-			grpc.WithInsecure(),
+var clusterNodesCommand = &cli.Command{
+	Name:  "nodes",
+	Usage: "list cluster nodes",
+	Action: func(clix *cli.Context) error {
+		c, err := client.NewClient(clix.String("address"))
+		if err != nil {
+			return err
 		}
-	}
+		defer c.Close()
 
-	c, err := grpc.DialContext(ctx,
-		addr,
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
+		ctx := context.Background()
+		resp, err := c.Nodes(ctx, &api.NodesRequest{})
+		if err != nil {
+			return err
+		}
 
-	client := &Client{
-		api.NewCircuitClient(c),
-		api.NewClusterClient(c),
-		c,
-	}
+		w := tabwriter.NewWriter(os.Stdout, 10, 1, 3, ' ', 0)
+		const tfmt = "%s\n"
+		fmt.Fprint(w, "NAME\n")
+		for _, node := range resp.Nodes {
+			fmt.Fprintf(w, tfmt, node.Name)
+		}
+		return w.Flush()
 
-	return client, nil
-}
-
-// Conn returns the current configured client connection
-func (c *Client) Conn() *grpc.ClientConn {
-	return c.conn
-}
-
-// Close closes the underlying GRPC client
-func (c *Client) Close() error {
-	return c.conn.Close()
+		return nil
+	},
 }
