@@ -33,7 +33,7 @@ import (
 )
 
 func (s *Server) restartWatcher() {
-	t := time.NewTicker(5 * time.Second)
+	t := time.NewTicker(10 * time.Second)
 	for range t.C {
 		if err := s.checkContainers(); err != nil {
 			logrus.Error(err)
@@ -85,7 +85,8 @@ func (s *Server) checkContainers() error {
 			}
 
 			switch st.Status {
-			case containerd.Running:
+			case containerd.Running, containerd.Created, containerd.Pausing, containerd.Paused:
+				// skip if running or until stopped
 				continue
 			case containerd.Stopped:
 				if _, err := t.Delete(ctx); err != nil {
