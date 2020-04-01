@@ -36,7 +36,7 @@ bindir:
 build: bindir server
 
 server: bindir
-	@cd cmd/circuit && go build -v -ldflags "-w -X github.com/$(REPO)/version.GitCommit=$(COMMIT) -X github.com/$(REPO)/version.Build=$(BUILD)" -o ../../bin/circuit
+	@cd cmd/circuit && go build -v -ldflags "-w -X github.com/$(REPO)/version.GitCommit=$(COMMIT) -X github.com/$(REPO)/version.Build=$(BUILD)" -mod=vendor -o ../../bin/circuit
 
 build-docker:
 	@docker build -t ${IMAGE} .
