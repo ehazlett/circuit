@@ -24,6 +24,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/containerd/containerd/errdefs"
@@ -124,10 +125,6 @@ func (s *Server) handleClusterEvent(ctx context.Context, msg *nats.Msg) error {
 			if !errdefs.IsNotFound(err) {
 				return err
 			}
-			if err := nc.Publish(msg.Reply, nil); err != nil {
-				return err
-			}
-			return nil
 		}
 
 		for _, cip := range cIPs {
@@ -139,6 +136,16 @@ func (s *Server) handleClusterEvent(ctx context.Context, msg *nats.Msg) error {
 				return err
 			}
 		}
+
+		// send OpComplete
+		data, err := marshal(&api.OpComplete{Node: s.config.NodeName})
+		if err != nil {
+			return err
+		}
+
+		if err := nc.Publish(msg.Reply, data); err != nil {
+			return err
+		}
 	default:
 		logrus.Warnf("unknown cluster event type %T", v)
 	}
@@ -146,81 +153,34 @@ func (s *Server) handleClusterEvent(ctx context.Context, msg *nats.Msg) error {
 	return nil
 }
 
-func (s *Server) getClusterContainerIPs(ctx context.Context, containerID string, timeout time.Duration) ([]*api.ContainerIP, error) {
+func (s *Server) getClusterContainerIPs(ctx context.Context, containerID string) ([]*api.ContainerIP, error) {
 	cIPs := []*api.ContainerIP{}
 
-	nc, err := nats.Connect(s.config.NATSAddr)
-	if err != nil {
-		return nil, err
-	}
-	defer nc.Close()
-
-	replySubject := fmt.Sprintf("circuit.%d", time.Now().UnixNano())
-
 	doneCh := make(chan bool, 1)
-	recvCh := make(chan *nats.Msg)
-
-	sub, err := nc.ChanSubscribe(replySubject, recvCh)
-	if err != nil {
-		return nil, err
-	}
-
-	numNodes := len(s.clusterNodes())
+	recvCh := make(chan interface{})
 	go func() {
-		logrus.Debugf("waiting for response from %d node(s)", numNodes)
-
 		for {
-			if numNodes == 0 {
+			i, ok := <-recvCh
+			if !ok {
 				doneCh <- true
 				return
 			}
-
-			msg := <-recvCh
-			if msg != nil && len(msg.Data) > 0 {
-				i, err := unmarshal(msg.Data)
-				if err != nil {
-					logrus.Error(err)
-					return
-				}
-
-				v, ok := i.(*api.ContainerIP)
-				if !ok {
-					logrus.Warnf("expected api.ContainerIP; received %T", i)
-					continue
-				}
-				cIPs = append(cIPs, v)
+			v, ok := i.(*api.ContainerIP)
+			if !ok {
+				logrus.Warnf("expected api.ContainerIP; received %T", i)
+				continue
 			}
-			numNodes--
+			cIPs = append(cIPs, v)
 		}
 	}()
 
-	data, err := marshal(&api.ContainerIPQuery{
+	if err := s.receiveClusterMessages(&api.ContainerIPQuery{
 		Container: containerID,
-	})
-	if err != nil {
+	}, recvCh); err != nil {
 		return nil, err
 	}
 
-	// publish query request and wait for replies
-	if err := nc.PublishRequest(clusterQueueSubject, replySubject, data); err != nil {
-		return nil, err
-	}
-
-	logrus.Debugf("waiting for replies on %s", replySubject)
-
-	// wait until we either receive all replies
-	// for the number of nodes or until the timeout is reached
-	select {
-	case <-time.After(timeout):
-	case <-doneCh:
-	}
-
-	if err := sub.Unsubscribe(); err != nil {
-		return nil, err
-	}
-	logrus.Debugf("unsubscribed from reply queue %s", replySubject)
-
-	close(recvCh)
+	<-doneCh
 
 	return cIPs, nil
 }
@@ -232,6 +192,55 @@ func (s *Server) clusterNodes() []string {
 		nodes = append(nodes, kv.Key)
 	}
 	return nodes
+}
+
+func (s *Server) receiveClusterMessages(request interface{}, recvCh chan interface{}) error {
+	replySubject := fmt.Sprintf("circuit.%d", time.Now().UnixNano())
+
+	nc, err := nats.Connect(s.config.NATSAddr)
+	if err != nil {
+		return err
+	}
+	defer nc.Close()
+
+	wg := &sync.WaitGroup{}
+	wg.Add(len(s.clusterNodes()))
+	sub, err := nc.Subscribe(replySubject, func(m *nats.Msg) {
+		i, err := unmarshal(m.Data)
+		if err != nil {
+			logrus.Error(err)
+			return
+		}
+		switch i.(type) {
+		case *api.OpComplete:
+			wg.Done()
+		default:
+			recvCh <- i
+		}
+	})
+	if err != nil {
+		return err
+	}
+
+	// send request and wait for response from all nodes
+	data, err := marshal(request)
+	if err != nil {
+		return err
+	}
+	if err := nc.PublishRequest(clusterQueueSubject, replySubject, data); err != nil {
+		return err
+	}
+
+	wg.Wait()
+
+	if err := sub.Unsubscribe(); err != nil {
+		return err
+	}
+
+	close(recvCh)
+
+	return nil
+
 }
 
 // marshal marshals to protobuf for use with the queue
