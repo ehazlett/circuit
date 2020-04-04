@@ -30,6 +30,11 @@ service Cluster {
         rpc Nodes(NodesRequest) returns (NodesResponse);
 }
 
+// OpComplete is used to signal completed response
+message OpComplete {
+        string node = 1;
+}
+
 message NodeInfo {
         string name = 1;
 }
