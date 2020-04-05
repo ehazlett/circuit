@@ -147,7 +147,7 @@ func (s *Server) getContainerIPs(ctx context.Context, containerID string) ([]*ap
 		return s.getLocalContainerIPs(ctx, containerID)
 	}
 	// cluster enabled
-	cIPs, err := s.getClusterContainerIPs(ctx, containerID, heartbeatInterval)
+	cIPs, err := s.getClusterContainerIPs(ctx, containerID)
 	if err != nil {
 		return nil, err
 	}
