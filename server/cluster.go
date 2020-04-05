@@ -30,6 +30,7 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/typeurl"
 	api "github.com/ehazlett/circuit/api/circuit/v1"
+	"github.com/ehazlett/circuit/version"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	nats "github.com/nats-io/nats.go"
@@ -45,7 +46,8 @@ func (s *Server) Nodes(ctx context.Context, req *api.NodesRequest) (*api.NodesRe
 	nodes := []*api.NodeInfo{}
 	for _, node := range cNodes {
 		nodes = append(nodes, &api.NodeInfo{
-			Name: node,
+			Name:    node,
+			Version: version.BuildVersion(),
 		})
 	}
 

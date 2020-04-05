@@ -37,6 +37,7 @@ message OpComplete {
 
 message NodeInfo {
         string name = 1;
+        string version = 2;
 }
 
 message NodesRequest {}

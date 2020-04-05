@@ -58,10 +58,10 @@ var clusterNodesCommand = &cli.Command{
 		}
 
 		w := tabwriter.NewWriter(os.Stdout, 10, 1, 3, ' ', 0)
-		const tfmt = "%s\n"
-		fmt.Fprint(w, "NAME\n")
+		const tfmt = "%s\t%s\n"
+		fmt.Fprint(w, "NAME\tVERSION\n")
 		for _, node := range resp.Nodes {
-			fmt.Fprintf(w, tfmt, node.Name)
+			fmt.Fprintf(w, tfmt, node.Name, node.Version)
 		}
 		return w.Flush()
 
