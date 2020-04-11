@@ -82,7 +82,7 @@ func (l *Local) GetNetworks() ([]*libcni.NetworkConfig, error) {
 		name := strings.TrimSuffix(p.Name(), filepath.Ext(p.Name()))
 		n, err := l.GetNetwork(name)
 		if err != nil {
-			return nil, errors.Errorf("unable to get info for network %s", name)
+			return nil, errors.Wrapf(err, "unable to get info for network %s", name)
 		}
 
 		networks = append(networks, n)

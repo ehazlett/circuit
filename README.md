@@ -21,7 +21,7 @@ the daemon will monitor containers and restart if they exit.
 
 Circuit can be used with a [CoreDNS](https://coredns.io/) [Plugin](https://github.com/ehazlett/circuit-coredns)
 to provide DNS responses for containers.  This is most useful with the [macvlan](https://github.com/containernetworking/plugins/tree/master/plugins/main/macvlan)
-CNI plugin.  Circuit uses [NATS](https://nats.io/) to provide basic clustering to enable container IP resolution
+CNI plugin.  Circuit uses [Redis](https://redis.io/) to provide basic clustering to enable container IP resolution
 across a fleet of Circuit nodes.
 
 # Usage
@@ -159,14 +159,14 @@ INFO[0005] connected shell to ctr0 with ip 10.255.0.5
 ```
 
 # Clustering
-Circuit can be configured to use [NATS](https://nats.io/) so that when querying for the container IP
+Circuit can be configured to use [Redis](https://redis.io/) so that when querying for the container IP
 (i.e `circuit network ips <name>`) the Circuit nodes will query each other internally and return
-all known IPs of containers with that name.  Note: you will need to setup a NATS host separately.
+all known IPs of containers with that name.  Note: you will need to setup a Redis host separately.
 
-To form a Circuit cluster, simply configure the Circuit server to connect to NATS:
+To form a Circuit cluster, simply configure the Circuit server to connect to Redis:
 
 ```
-$> circuit server --nats-addr 1.2.3.4:4222
+$> circuit server --nats-addr 1.2.3.4:6379
 ```
 
 You can then list all available nodes:

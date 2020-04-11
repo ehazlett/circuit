@@ -22,9 +22,14 @@
 package main
 
 import (
+	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/ehazlett/circuit/server"
+	"github.com/pkg/errors"
+	"github.com/pkg/profile"
+	"github.com/sirupsen/logrus"
 	cli "github.com/urfave/cli/v2"
 )
 
@@ -64,8 +69,8 @@ var serverCommand = &cli.Command{
 			Value: getNodeName(),
 		},
 		&cli.StringFlag{
-			Name:  "nats-addr",
-			Usage: "join nats cluster",
+			Name:  "redis-url",
+			Usage: "redis url for clustering",
 			Value: "",
 		},
 	},
@@ -84,8 +89,30 @@ func serverAction(clix *cli.Context) error {
 		TLSServerCertificate:  clix.String("tls-server-cert"),
 		TLSServerKey:          clix.String("tls-server-key"),
 		TLSInsecureSkipVerify: clix.Bool("tls-skip-verify"),
-		NATSAddr:              clix.String("nats-addr"),
+		RedisURL:              clix.String("redis-url"),
 	}
+	if v := clix.String("profile"); v != "" {
+		profileDir, err := ioutil.TempDir("", "circuit-profile-")
+		if err != nil {
+			return err
+		}
+		switch v {
+		case "cpu":
+			defer profile.Start(profile.Quiet, profile.ProfilePath(profileDir)).Stop()
+		case "mem":
+			defer profile.Start(profile.MemProfile, profile.Quiet, profile.ProfilePath(profileDir)).Stop()
+		case "goroutine":
+			defer profile.Start(profile.GoroutineProfile, profile.Quiet, profile.ProfilePath(profileDir)).Stop()
+		case "block":
+			defer profile.Start(profile.BlockProfile, profile.Quiet, profile.ProfilePath(profileDir)).Stop()
+		case "mutex":
+			defer profile.Start(profile.MutexProfile, profile.Quiet, profile.ProfilePath(profileDir)).Stop()
+		default:
+			return errors.Errorf("unknown profile %s", v)
+		}
+		logrus.Infof("generating profile to %s", filepath.Join(profileDir, v+".pprof"))
+	}
+
 	srv, err := server.NewServer(cfg)
 	if err != nil {
 		return err

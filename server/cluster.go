@@ -24,7 +24,7 @@ package server
 import (
 	"context"
 	"fmt"
-	"sync"
+	"net/url"
 	"time"
 
 	"github.com/containerd/containerd/errdefs"
@@ -33,24 +33,27 @@ import (
 	"github.com/ehazlett/circuit/version"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	nats "github.com/nats-io/nats.go"
+	"github.com/gomodule/redigo/redis"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	clusterQueueSubject = "circuit.cluster"
+	clusterHeartbeatExpire    = 10
+	clusterReplyTimeout       = time.Millisecond * 5000
+	clusterChannel            = "circuit.cluster"
+	clusterReplyChannelPrefix = "circuit.reply"
+)
+
+var (
+	clusterHeartbeatInterval = clusterHeartbeatExpire * time.Second
 )
 
 func (s *Server) Nodes(ctx context.Context, req *api.NodesRequest) (*api.NodesResponse, error) {
-	cNodes := s.clusterNodes()
-	nodes := []*api.NodeInfo{}
-	for _, node := range cNodes {
-		nodes = append(nodes, &api.NodeInfo{
-			Name:    node,
-			Version: version.BuildVersion(),
-		})
+	nodes, err := s.clusterNodes(ctx)
+	if err != nil {
+		return nil, err
 	}
-
 	return &api.NodesResponse{
 		Nodes: nodes,
 	}, nil
@@ -63,61 +66,87 @@ func (s *Server) clusterListener(ctx context.Context, errCh chan error) {
 	}
 
 	logrus.Debug("starting cluster")
-	nc, err := nats.Connect(s.config.NATSAddr)
+	pool, err := getPool(s.config.RedisURL)
 	if err != nil {
 		errCh <- err
 		return
 	}
+	s.pool = pool
 
-	go s.clusterHeartbeat(nc, errCh)
+	go s.clusterHeartbeat(errCh)
 
-	recvCh := make(chan *nats.Msg)
-	if _, err := nc.ChanSubscribe(clusterQueueSubject, recvCh); err != nil {
+	c := s.pool.Get()
+	defer c.Close()
+
+	psc := redis.PubSubConn{Conn: c}
+	if err := psc.PSubscribe(clusterChannel); err != nil {
 		errCh <- err
 		return
 	}
 	for {
-		msg := <-recvCh
-		cx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-		if err := s.handleClusterEvent(cx, msg); err != nil {
-			logrus.Error(err)
+		switch v := psc.Receive().(type) {
+		case redis.Message:
+			if err := s.handleClusterEvent(ctx, v); err != nil {
+				errCh <- err
+				return
+			}
+		case redis.Subscription:
+		default:
+			logrus.Warnf("unknown message type %T", v)
 		}
-		cancel()
 	}
 }
 
-func (s *Server) clusterHeartbeat(nc *nats.Conn, errCh chan error) {
-	t := time.NewTicker(heartbeatInterval)
+func (s *Server) clusterHeartbeat(errCh chan error) {
+	t := time.NewTicker(clusterHeartbeatInterval)
 	for range t.C {
-		data, err := marshal(&api.NodeInfo{Name: s.config.NodeName})
+		data, err := marshal(&api.NodeInfo{
+			Name:    s.config.NodeName,
+			Version: version.BuildVersion(),
+		})
 		if err != nil {
 			errCh <- err
 			return
 		}
-		if err := nc.Publish(clusterQueueSubject, data); err != nil {
+
+		key := s.clusterNodeKey(s.config.NodeName)
+		ctx := context.Background()
+		if _, err := s.do(ctx, "SET", key, data); err != nil {
+			errCh <- err
+			return
+		}
+		// set ttl
+		if _, err := s.do(ctx, "EXPIRE", key, clusterHeartbeatExpire); err != nil {
 			errCh <- err
 			return
 		}
 	}
 }
 
-func (s *Server) handleClusterEvent(ctx context.Context, msg *nats.Msg) error {
+func (s *Server) handleClusterEvent(ctx context.Context, msg redis.Message) error {
 	i, err := unmarshal(msg.Data)
 	if err != nil {
 		return err
 	}
 	switch v := i.(type) {
-	case *api.NodeInfo:
-		if err := s.cache.Set(v.Name, v.Name); err != nil {
+	case *api.ClusterRequest:
+		if err := s.handleClusterRequest(ctx, v); err != nil {
 			return err
 		}
-	case *api.ContainerIPQuery:
-		nc, err := nats.Connect(s.config.NATSAddr)
-		if err != nil {
-			return err
-		}
-		defer nc.Close()
+	default:
+		logrus.Warnf("unknown cluster event type %T", v)
+	}
 
+	return nil
+}
+
+func (s *Server) handleClusterRequest(ctx context.Context, req *api.ClusterRequest) error {
+	i, err := typeurl.UnmarshalAny(req.Request)
+	if err != nil {
+		return err
+	}
+	switch v := i.(type) {
+	case *api.ContainerIPQuery:
 		cIPs, err := s.getLocalContainerIPs(ctx, v.Container)
 		if err != nil {
 			// if the container is not found we want to send
@@ -134,7 +163,7 @@ func (s *Server) handleClusterEvent(ctx context.Context, msg *nats.Msg) error {
 			if err != nil {
 				return err
 			}
-			if err := nc.Publish(msg.Reply, data); err != nil {
+			if _, err := s.do(ctx, "PUBLISH", req.Channel, data); err != nil {
 				return err
 			}
 		}
@@ -144,12 +173,9 @@ func (s *Server) handleClusterEvent(ctx context.Context, msg *nats.Msg) error {
 		if err != nil {
 			return err
 		}
-
-		if err := nc.Publish(msg.Reply, data); err != nil {
+		if _, err := s.do(ctx, "PUBLISH", req.Channel, data); err != nil {
 			return err
 		}
-	default:
-		logrus.Warnf("unknown cluster event type %T", v)
 	}
 
 	return nil
@@ -157,7 +183,6 @@ func (s *Server) handleClusterEvent(ctx context.Context, msg *nats.Msg) error {
 
 func (s *Server) getClusterContainerIPs(ctx context.Context, containerID string) ([]*api.ContainerIP, error) {
 	cIPs := []*api.ContainerIP{}
-
 	doneCh := make(chan bool, 1)
 	recvCh := make(chan interface{})
 	go func() {
@@ -169,14 +194,14 @@ func (s *Server) getClusterContainerIPs(ctx context.Context, containerID string)
 			}
 			v, ok := i.(*api.ContainerIP)
 			if !ok {
-				logrus.Warnf("expected api.ContainerIP; received %T", i)
+				logrus.Warnf("expected *api.ContainerIP; received %T", i)
 				continue
 			}
 			cIPs = append(cIPs, v)
 		}
 	}()
 
-	if err := s.receiveClusterMessages(&api.ContainerIPQuery{
+	if err := s.receiveClusterMessages(ctx, &api.ContainerIPQuery{
 		Container: containerID,
 	}, recvCh); err != nil {
 		return nil, err
@@ -187,62 +212,145 @@ func (s *Server) getClusterContainerIPs(ctx context.Context, containerID string)
 	return cIPs, nil
 }
 
-func (s *Server) clusterNodes() []string {
-	kvs := s.cache.GetAll()
-	nodes := []string{}
-	for _, kv := range kvs {
-		nodes = append(nodes, kv.Key)
+func (s *Server) clusterNodes(ctx context.Context) ([]*api.NodeInfo, error) {
+	nodes := []*api.NodeInfo{}
+	keys, err := redis.Strings(s.do(ctx, "KEYS", s.clusterNodeKey("*")))
+	if err != nil {
+		return nil, err
 	}
-	return nodes
+	for _, key := range keys {
+		i, err := s.getData(ctx, key)
+		if err != nil {
+			return nil, err
+		}
+
+		v, ok := i.(*api.NodeInfo)
+		if !ok {
+			return nil, errors.Errorf("expected *api.NodeInfo; received %T", v)
+		}
+		nodes = append(nodes, v)
+	}
+	return nodes, nil
 }
 
-func (s *Server) receiveClusterMessages(request interface{}, recvCh chan interface{}) error {
-	replySubject := fmt.Sprintf("circuit.%d", time.Now().UnixNano())
+func (s *Server) receiveClusterMessages(ctx context.Context, req interface{}, recvCh chan interface{}) error {
+	replyChannel := fmt.Sprintf("%s.%d", clusterReplyChannelPrefix, time.Now().UnixNano())
 
-	nc, err := nats.Connect(s.config.NATSAddr)
+	doneCh := make(chan bool, 1)
+	nodes, err := s.clusterNodes(ctx)
 	if err != nil {
 		return err
 	}
-	defer nc.Close()
+	numNodes := len(nodes)
 
-	wg := &sync.WaitGroup{}
-	wg.Add(len(s.clusterNodes()))
-	sub, err := nc.Subscribe(replySubject, func(m *nats.Msg) {
-		i, err := unmarshal(m.Data)
-		if err != nil {
-			logrus.Error(err)
-			return
-		}
-		switch i.(type) {
-		case *api.OpComplete:
-			wg.Done()
-		default:
-			recvCh <- i
-		}
-	})
-	if err != nil {
+	c := s.pool.Get()
+	defer c.Close()
+
+	psc := redis.PubSubConn{Conn: c}
+	if err := psc.Subscribe(replyChannel); err != nil {
 		return err
 	}
+	go func() {
+		replies := 0
+		for {
+			if replies >= numNodes {
+				break
+			}
+			switch v := psc.Receive().(type) {
+			case redis.Message:
+				i, err := unmarshal(v.Data)
+				if err != nil {
+					logrus.Error(err)
+					return
+				}
+				switch i.(type) {
+				case *api.OpComplete:
+					replies++
+				default:
+					recvCh <- i
+				}
+			}
+		}
+		doneCh <- true
+	}()
 
 	// send request and wait for response from all nodes
+	any, err := typeurl.MarshalAny(req)
+	if err != nil {
+		return err
+	}
+	request := &api.ClusterRequest{
+		Channel: replyChannel,
+		Request: any,
+	}
 	data, err := marshal(request)
 	if err != nil {
 		return err
 	}
-	if err := nc.PublishRequest(clusterQueueSubject, replySubject, data); err != nil {
+	if _, err := s.do(ctx, "PUBLISH", clusterChannel, data); err != nil {
 		return err
 	}
 
-	wg.Wait()
-
-	if err := sub.Unsubscribe(); err != nil {
-		return err
+	select {
+	case <-doneCh:
+	case <-time.After(clusterReplyTimeout):
+		logrus.Warnf("timeout occured waiting on cluster reply (%s)", clusterReplyTimeout)
 	}
 
 	close(recvCh)
 
-	return nil
+	if err := psc.Unsubscribe(replyChannel); err != nil {
+		return err
+	}
 
+	return nil
+}
+
+func (s *Server) do(ctx context.Context, cmd string, args ...interface{}) (interface{}, error) {
+	conn, err := s.pool.GetContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	r, err := conn.Do(cmd, args...)
+	return r, err
+}
+
+func (s *Server) clusterNodeKey(node string) string {
+	return "nodes:" + node
+}
+
+func (s *Server) getData(ctx context.Context, key string) (interface{}, error) {
+	data, err := redis.Bytes(s.do(ctx, "GET", key))
+	if err != nil {
+		return nil, err
+	}
+
+	return unmarshal(data)
+}
+
+func getPool(redisUrl string) (*redis.Pool, error) {
+	pool := redis.NewPool(func() (redis.Conn, error) {
+		conn, err := redis.DialURL(redisUrl)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to connect to redis")
+		}
+
+		u, err := url.Parse(redisUrl)
+		if err != nil {
+			return nil, err
+		}
+
+		auth, ok := u.User.Password()
+		if ok {
+			if _, err := conn.Do("CONFIG", "SET", "MASTERAUTH", auth); err != nil {
+				return nil, errors.Wrap(err, "error authenticating to redis")
+			}
+		}
+		return conn, nil
+	}, 10)
+
+	return pool, nil
 }
 
 // marshal marshals to protobuf for use with the queue

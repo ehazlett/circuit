@@ -169,6 +169,9 @@ func (s *Server) getLocalContainerIPs(ctx context.Context, containerID string) (
 
 	networkConfig, err := s.loadNetworkConfig(ctx, container)
 	if err != nil {
+		if err == ErrNetworkConfigExtensionNotFound {
+			return nil, nil
+		}
 		return nil, err
 	}
 

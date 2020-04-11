@@ -24,15 +24,12 @@ syntax = "proto3";
 
 package io.circuit.v1;
 
+import "google/protobuf/any.proto";
+
 option go_package = "github.com/ehazlett/circuit/api/circuit/v1;v1";
 
 service Cluster {
         rpc Nodes(NodesRequest) returns (NodesResponse);
-}
-
-// OpComplete is used to signal completed response
-message OpComplete {
-        string node = 1;
 }
 
 message NodeInfo {
@@ -46,6 +43,18 @@ message NodesResponse {
         repeated NodeInfo nodes = 1;
 }
 
+// ClusterRequest is used to send requests through the cluster
+message ClusterRequest {
+        string channel = 1;
+        google.protobuf.Any request = 2;
+}
+
+// OpComplete is used to signal completed response
+message OpComplete {
+        string node = 1;
+}
+
 message ContainerIPQuery {
-        string container = 1;
+        string channel = 1;
+        string container = 2;
 }

@@ -1,0 +1,40 @@
+root = "/var/lib/containerd"
+state = "/run/containerd"
+plugin_dir = "/opt/containerd/plugins"
+
+disabled_plugins = [
+  "cri",
+  "btrfs",
+  "zfs",
+  "aufs",
+  "restart",
+  "devmapper",
+]
+
+[grpc]
+  address = "/run/containerd/containerd.sock"
+
+[debug]
+  level = "info"
+
+[metrics]
+  address = "0.0.0.0:9100"
+  grpc_histogram = true
+
+[plugins]
+  [plugins.bolt]
+    content_sharing_policy = "shared"
+  [plugins.cgroups]
+    no_prometheus = false
+  [plugins.diff-service]
+    default = ["walking"]
+  [plugins.opt]
+    path = "/opt/containerd"
+  [plugins.scheduler]
+    pause_threshold = 0.02
+    deletion_threshold = 0
+    mutation_threshold = 100
+    schedule_delay = "0s"
+    startup_delay = "100ms"
+  [plugins.task]
+    platforms = ["linux/amd64"]

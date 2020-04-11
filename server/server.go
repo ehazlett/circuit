@@ -34,8 +34,8 @@ import (
 	"github.com/ehazlett/circuit/server/ds"
 	"github.com/ehazlett/circuit/server/ds/local"
 	"github.com/ehazlett/circuit/version"
-	"github.com/ehazlett/ttlcache"
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -51,8 +51,7 @@ var (
 	// ErrUnsupportedDatastore is returned when an unsupported datastore is specified
 	ErrUnsupportedDatastore = errors.New("unsupported datastore")
 
-	heartbeatInterval = time.Second * 5
-	empty             = &ptypes.Empty{}
+	empty = &ptypes.Empty{}
 )
 
 // Config is the metrics server configuration
@@ -77,8 +76,8 @@ type Config struct {
 	TLSServerKey string
 	// TLSInsecureSkipVerify disables certificate verification
 	TLSInsecureSkipVerify bool
-	// NATSAddr is the NATS address for clustering
-	NATSAddr string
+	// RedisURL is the Redis address for clustering
+	RedisURL string
 }
 
 // Server is the circuit server
@@ -86,7 +85,7 @@ type Server struct {
 	config     *Config
 	ds         ds.Datastore
 	grpcServer *grpc.Server
-	cache      *ttlcache.TTLCache
+	pool       *redis.Pool
 }
 
 // NewServer returns a new metrics server
@@ -118,22 +117,16 @@ func NewServer(cfg *Config) (*Server, error) {
 
 	grpcServer := grpc.NewServer(grpcOpts...)
 
-	c, err := ttlcache.NewTTLCache(heartbeatInterval * 2)
-	if err != nil {
-		return nil, err
-	}
-
 	srv := &Server{
 		config:     cfg,
 		ds:         d,
 		grpcServer: grpcServer,
-		cache:      c,
 	}
 
 	// register
 	circuitapi.RegisterCircuitServer(grpcServer, srv)
 	// register cluster service if configured
-	if cfg.NATSAddr != "" {
+	if cfg.RedisURL != "" {
 		logrus.Debug("enabling cluster service")
 		circuitapi.RegisterClusterServer(grpcServer, srv)
 	}
@@ -176,11 +169,12 @@ func (s *Server) containerd() (*containerd.Client, error) {
 	return containerd.New(s.config.ContainerdAddr,
 		containerd.WithDefaultNamespace(s.config.ContainerdNamespace),
 		containerd.WithDefaultRuntime(defaultRuntime),
+		containerd.WithTimeout(time.Second*1),
 	)
 }
 
 func (s *Server) clusterEnabled() bool {
-	return s.config.NATSAddr != ""
+	return s.config.RedisURL != ""
 }
 
 func getDatastore(uri string) (ds.Datastore, error) {
