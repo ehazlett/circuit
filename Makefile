@@ -39,7 +39,10 @@ server: bindir
 	@cd cmd/circuit && go build -v -ldflags "-w -X github.com/$(REPO)/version.GitCommit=$(COMMIT) -X github.com/$(REPO)/version.Build=$(BUILD)" -mod=vendor -o ../../bin/circuit
 
 build-docker:
-	@docker build -t ${IMAGE} .
+	@docker build -t $(IMAGE) .
+
+build-localnode: build-docker
+	@docker build -t $(APP)-localnode:latest --build-arg=IMAGE=$(IMAGE) -f Dockerfile.localnode .
 
 install:
 	@install bin/* /usr/local/bin/

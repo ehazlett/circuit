@@ -58,6 +58,11 @@ func main() {
 			Name:  "tls-skip-verify",
 			Usage: "tls skip verification",
 		},
+		&cli.StringFlag{
+			Name:  "profile",
+			Usage: "enable profiling of cpu,mem,goroutine,block,mutex (default: disabled)",
+			Value: "",
+		},
 	}
 	app.Before = func(clix *cli.Context) error {
 		if clix.Bool("debug") {

@@ -14,15 +14,17 @@ require (
 	github.com/docker/distribution v0.0.0-20190205005809-0d3efadf0154 // indirect
 	github.com/docker/go-events v0.0.0-20190806004212-e31b211e4f1c // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
-	github.com/ehazlett/ttlcache v0.0.0-20200331044158-c0ff40f4dd05
+	github.com/ehazlett/ttlcache v0.0.0-20200331044158-c0ff40f4dd05 // indirect
 	github.com/gogo/googleapis v1.3.2
 	github.com/gogo/protobuf v1.3.1
+	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/nats-io/nats.go v1.9.1
+	github.com/nats-io/nats.go v1.9.1 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/opencontainers/runtime-spec v1.0.1 // indirect
 	github.com/pkg/errors v0.9.1
+	github.com/pkg/profile v1.4.0
 	github.com/sirupsen/logrus v1.5.0
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.5.1 // indirect
