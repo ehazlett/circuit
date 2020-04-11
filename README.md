@@ -166,7 +166,7 @@ all known IPs of containers with that name.  Note: you will need to setup a Redi
 To form a Circuit cluster, simply configure the Circuit server to connect to Redis:
 
 ```
-$> circuit server --nats-addr 1.2.3.4:6379
+$> circuit server --redis-url redis://1.2.3.4:6379
 ```
 
 You can then list all available nodes:
