@@ -21,14 +21,12 @@
 */
 package version
 
-import "runtime"
-
 var (
 	// Name is the name of the application
 	Name = "circuit"
 
 	// Version defines the application version
-	Version = "1.3"
+	Version = "1.4"
 
 	// Description is the application description
 	Description = "container management"
@@ -42,7 +40,7 @@ var (
 
 // BuildVersion returns the build version information including version, build and git commit
 func BuildVersion() string {
-	return Version + Build + " (" + GitCommit + ") " + runtime.GOOS + "/" + runtime.GOARCH
+	return Version + Build + " (" + GitCommit + ")"
 }
 
 // FullVersion returns the build version information including version, build and git commit

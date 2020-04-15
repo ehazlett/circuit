@@ -35,6 +35,9 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/host"
+	"github.com/shirou/gopsutil/mem"
 	"github.com/sirupsen/logrus"
 )
 
@@ -99,10 +102,34 @@ func (s *Server) clusterListener(ctx context.Context, errCh chan error) {
 
 func (s *Server) clusterHeartbeat(errCh chan error) {
 	t := time.NewTicker(clusterHeartbeatInterval)
+	cpus, err := cpu.Counts(true)
+	if err != nil {
+		errCh <- err
+		return
+	}
+	memStat, err := mem.VirtualMemory()
+	if err != nil {
+		errCh <- err
+		return
+	}
+	uptime, err := host.Uptime()
+	if err != nil {
+		errCh <- err
+		return
+	}
+	kernelVersion, err := host.KernelVersion()
+	if err != nil {
+		errCh <- err
+		return
+	}
 	for range t.C {
 		data, err := marshal(&api.NodeInfo{
-			Name:    s.config.NodeName,
-			Version: version.BuildVersion(),
+			Name:          s.config.NodeName,
+			Version:       version.BuildVersion(),
+			CPUs:          int64(cpus),
+			Memory:        memStat.Total,
+			Uptime:        uptime,
+			KernelVersion: kernelVersion,
 		})
 		if err != nil {
 			errCh <- err

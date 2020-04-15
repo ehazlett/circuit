@@ -27,7 +27,9 @@ import (
 	"os"
 	"sort"
 	"text/tabwriter"
+	"time"
 
+	humanize "github.com/dustin/go-humanize"
 	api "github.com/ehazlett/circuit/api/circuit/v1"
 	"github.com/ehazlett/circuit/client"
 	cli "github.com/urfave/cli/v2"
@@ -61,10 +63,10 @@ var clusterNodesCommand = &cli.Command{
 		sort.Slice(resp.Nodes, func(i, j int) bool { return resp.Nodes[i].Name < resp.Nodes[j].Name })
 
 		w := tabwriter.NewWriter(os.Stdout, 10, 1, 3, ' ', 0)
-		const tfmt = "%s\t%s\n"
-		fmt.Fprint(w, "NAME\tVERSION\n")
+		const tfmt = "%s\t%s\t%d\t%s\t%s\t%s\n"
+		fmt.Fprint(w, "NAME\tVERSION\tCPUS\tMEMORY\tUPTIME\tKERNEL\n")
 		for _, node := range resp.Nodes {
-			fmt.Fprintf(w, tfmt, node.Name, node.Version)
+			fmt.Fprintf(w, tfmt, node.Name, node.Version, node.CPUs, humanize.Bytes(node.Memory), humanize.Time(time.Now().Add(time.Duration(-node.Uptime)*time.Second)), node.KernelVersion)
 		}
 		return w.Flush()
 

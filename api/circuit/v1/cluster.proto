@@ -24,6 +24,7 @@ syntax = "proto3";
 
 package io.circuit.v1;
 
+import "gogoproto/gogo.proto";
 import "google/protobuf/any.proto";
 
 option go_package = "github.com/ehazlett/circuit/api/circuit/v1;v1";
@@ -35,6 +36,10 @@ service Cluster {
 message NodeInfo {
         string name = 1;
         string version = 2;
+        int64 cpus = 3 [(gogoproto.customname) = "CPUs"];
+        uint64 memory = 4;
+        uint64 uptime = 5;
+        string kernel_version = 6;
 }
 
 message NodesRequest {}

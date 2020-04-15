@@ -20,6 +20,8 @@ github.com/Microsoft/hcsshim/internal/vmcompute
 github.com/Microsoft/hcsshim/internal/longpath
 github.com/Microsoft/hcsshim/internal/safefile
 github.com/Microsoft/hcsshim/osversion
+# github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d
+github.com/StackExchange/wmi
 # github.com/containerd/cgroups v0.0.0-20190919134610-bf292b21730f
 github.com/containerd/cgroups/stats/v1
 # github.com/containerd/containerd v1.3.3
@@ -99,6 +101,11 @@ github.com/docker/distribution/registry/api/errcode
 github.com/docker/distribution/digestset
 # github.com/docker/go-events v0.0.0-20190806004212-e31b211e4f1c
 github.com/docker/go-events
+# github.com/dustin/go-humanize v1.0.0
+github.com/dustin/go-humanize
+# github.com/go-ole/go-ole v1.2.4
+github.com/go-ole/go-ole
+github.com/go-ole/go-ole/oleutil
 # github.com/gogo/googleapis v1.3.2
 github.com/gogo/googleapis/google/api
 github.com/gogo/googleapis/google/rpc
@@ -138,6 +145,13 @@ github.com/pkg/errors
 github.com/pkg/profile
 # github.com/russross/blackfriday/v2 v2.0.1
 github.com/russross/blackfriday/v2
+# github.com/shirou/gopsutil v2.20.3+incompatible
+github.com/shirou/gopsutil/cpu
+github.com/shirou/gopsutil/host
+github.com/shirou/gopsutil/mem
+github.com/shirou/gopsutil/internal/common
+github.com/shirou/gopsutil/process
+github.com/shirou/gopsutil/net
 # github.com/shurcooL/sanitized_anchor_name v1.0.0
 github.com/shurcooL/sanitized_anchor_name
 # github.com/sirupsen/logrus v1.5.0
