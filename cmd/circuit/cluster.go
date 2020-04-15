@@ -25,6 +25,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 	"text/tabwriter"
 
 	api "github.com/ehazlett/circuit/api/circuit/v1"
@@ -56,6 +57,8 @@ var clusterNodesCommand = &cli.Command{
 		if err != nil {
 			return err
 		}
+
+		sort.Slice(resp.Nodes, func(i, j int) bool { return resp.Nodes[i].Name < resp.Nodes[j].Name })
 
 		w := tabwriter.NewWriter(os.Stdout, 10, 1, 3, ' ', 0)
 		const tfmt = "%s\t%s\n"
