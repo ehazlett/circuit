@@ -47,16 +47,20 @@ As an example, you can create a bridge network using the following config as `br
 {
     "cniVersion": "0.3.1",
     "name": "ctr0",
-    "type": "bridge",
-    "bridge": "ctr0",
-    "isDefaultGateway": true,
-    "forceAddress": false,
-    "ipMasq": true,
-    "hairpinMode": true,
-    "ipam": {
-        "type": "host-local",
-        "subnet": "10.255.0.0/16"
-    }
+    "plugins": [
+        {
+            "type": "bridge",
+            "bridge": "ctr0",
+            "isDefaultGateway": true,
+            "forceAddress": false,
+            "ipMasq": true,
+            "hairpinMode": true,
+            "ipam": {
+                "type": "host-local",
+                "subnet": "10.255.0.0/16"
+            }
+        }
+    ]
 }
 ```
 
