@@ -25,10 +25,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
+	"sort"
 
 	"github.com/containernetworking/cni/libcni"
-	"github.com/ehazlett/circuit/server/ds"
 	"github.com/pkg/errors"
 )
 
@@ -48,44 +47,35 @@ func New(statePath string) (*Local, error) {
 
 // GetNetwork returns the CNI network config for the specified network
 func (l *Local) GetNetwork(name string) (*libcni.NetworkConfigList, error) {
-	configPath := filepath.Join(l.statePath, name+".json")
-	if _, err := os.Stat(configPath); err != nil {
-		if os.IsNotExist(err) {
-			return nil, ds.ErrNetworkDoesNotExist
-		} else {
-			return nil, err
+	nets, err := l.GetNetworks()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, n := range nets {
+		if n.Name == name {
+			return n, nil
 		}
 	}
 
-	data, err := ioutil.ReadFile(configPath)
-	if err != nil {
-		return nil, err
-	}
-
-	networkConfig, err := libcni.ConfListFromBytes(data)
-	if err != nil {
-		return nil, err
-	}
-
-	return networkConfig, nil
+	return nil, errors.Errorf("network config for %s not found", name)
 }
 
 // GetNetworks returns all CNI network configs
 func (l *Local) GetNetworks() ([]*libcni.NetworkConfigList, error) {
-	nets, err := ioutil.ReadDir(l.statePath)
+	files, err := libcni.ConfFiles(l.statePath, []string{".json"})
 	if err != nil {
 		return nil, err
 	}
+	sort.Strings(files)
 
 	var networks []*libcni.NetworkConfigList
-	for _, p := range nets {
-		name := strings.TrimSuffix(p.Name(), filepath.Ext(p.Name()))
-		n, err := l.GetNetwork(name)
+	for _, confFile := range files {
+		conf, err := libcni.ConfListFromFile(confFile)
 		if err != nil {
-			return nil, errors.Wrapf(err, "unable to get info for network %s", name)
+			return nil, err
 		}
-
-		networks = append(networks, n)
+		networks = append(networks, conf)
 	}
 
 	return networks, nil
@@ -114,11 +104,18 @@ func (l *Local) SaveNetwork(name string, data []byte) error {
 
 // DeleteNetwork removes the network from the datastore
 func (l *Local) DeleteNetwork(name string) error {
-	if err := os.Remove(filepath.Join(l.statePath, name+".json")); err != nil {
-		if os.IsNotExist(err) {
-			return errors.Errorf("network %s does not exist", name)
-		}
+	files, err := libcni.ConfFiles(l.statePath, []string{".json"})
+	if err != nil {
 		return err
+	}
+	for _, confFile := range files {
+		conf, err := libcni.ConfListFromFile(confFile)
+		if err != nil {
+			return err
+		}
+		if conf.Name == name {
+			return os.Remove(confFile)
+		}
 	}
 	return nil
 }
