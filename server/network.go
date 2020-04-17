@@ -105,8 +105,7 @@ func (s *Server) ListNetworks(ct context.Context, req *api.ListNetworksRequest) 
 	networks := []*api.Network{}
 	for _, n := range nets {
 		networks = append(networks, &api.Network{
-			Name: n.Network.Name,
-			Type: n.Network.Type,
+			Name: n.Name,
 			Data: n.Bytes,
 		})
 	}
@@ -124,7 +123,6 @@ func (s *Server) GetNetwork(ctx context.Context, req *api.GetNetworkRequest) (*a
 	return &api.GetNetworkResponse{
 		Network: &api.Network{
 			Name: req.Name,
-			Type: network.Network.Type,
 			Data: network.Bytes,
 		},
 	}, nil
@@ -224,7 +222,7 @@ func (s *Server) connect(ctx context.Context, containerID, networkName string) (
 		return nil, errors.Wrap(err, "error getting cni config")
 	}
 
-	r, err := cninet.AddNetwork(ctx, nc, rt)
+	r, err := cninet.AddNetworkList(ctx, nc, rt)
 	if err != nil {
 		return nil, errors.Wrap(err, "error adding cni network")
 	}
@@ -301,7 +299,7 @@ func (s *Server) disconnect(ctx context.Context, containerID, networkName string
 		return errors.Wrapf(err, "error getting cni config for container %s", containerID)
 	}
 
-	if err := cninet.DelNetwork(ctx, nc, rt); err != nil {
+	if err := cninet.DelNetworkList(ctx, nc, rt); err != nil {
 		// check for "no such file" to see if the netns path exists.  if not the container is removed
 		// cni does not have a known code for not exists
 		// https://github.com/containernetworking/cni/blob/master/SPEC.md#well-known-error-codes

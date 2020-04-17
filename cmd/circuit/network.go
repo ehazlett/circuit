@@ -102,10 +102,10 @@ var networkListCommand = &cli.Command{
 		}
 
 		w := tabwriter.NewWriter(os.Stdout, 10, 1, 3, ' ', 0)
-		const tfmt = "%s\t%s\n"
-		fmt.Fprint(w, "NAME\tTYPE\n")
+		const tfmt = "%s\n"
+		fmt.Fprint(w, "NAME\n")
 		for _, network := range resp.Networks {
-			fmt.Fprintf(w, tfmt, network.Name, network.Type)
+			fmt.Fprintf(w, tfmt, network.Name)
 		}
 		return w.Flush()
 	},

@@ -48,13 +48,13 @@ var (
 	ErrNetworkConfigExtensionNotFound = errors.New("network config extension not found")
 )
 
-func (s *Server) getCniConfig(networkName string, containerPid int, ifaceName string) (*libcni.CNIConfig, *libcni.NetworkConfig, *libcni.RuntimeConf, error) {
+func (s *Server) getCniConfig(networkName string, containerPid int, ifaceName string) (*libcni.CNIConfig, *libcni.NetworkConfigList, *libcni.RuntimeConf, error) {
 	cfg, err := s.ds.GetNetwork(networkName)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	netConf, err := libcni.ConfFromBytes(cfg.Bytes)
+	netConf, err := libcni.ConfListFromBytes(cfg.Bytes)
 	if err != nil {
 		return nil, nil, nil, err
 	}

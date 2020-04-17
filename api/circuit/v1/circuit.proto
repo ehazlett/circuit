@@ -44,12 +44,10 @@ message CreateNetworkRequest {
         bytes data = 2;
 }
 
-message ListNetworksRequest {
-}
+message ListNetworksRequest {}
 
 message Network {
         string name = 1;
-        string type = 2;
         bytes data = 3;
 }
 

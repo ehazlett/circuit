@@ -47,7 +47,7 @@ func New(statePath string) (*Local, error) {
 }
 
 // GetNetwork returns the CNI network config for the specified network
-func (l *Local) GetNetwork(name string) (*libcni.NetworkConfig, error) {
+func (l *Local) GetNetwork(name string) (*libcni.NetworkConfigList, error) {
 	configPath := filepath.Join(l.statePath, name+".json")
 	if _, err := os.Stat(configPath); err != nil {
 		if os.IsNotExist(err) {
@@ -62,7 +62,7 @@ func (l *Local) GetNetwork(name string) (*libcni.NetworkConfig, error) {
 		return nil, err
 	}
 
-	networkConfig, err := libcni.ConfFromBytes(data)
+	networkConfig, err := libcni.ConfListFromBytes(data)
 	if err != nil {
 		return nil, err
 	}
@@ -71,13 +71,13 @@ func (l *Local) GetNetwork(name string) (*libcni.NetworkConfig, error) {
 }
 
 // GetNetworks returns all CNI network configs
-func (l *Local) GetNetworks() ([]*libcni.NetworkConfig, error) {
+func (l *Local) GetNetworks() ([]*libcni.NetworkConfigList, error) {
 	nets, err := ioutil.ReadDir(l.statePath)
 	if err != nil {
 		return nil, err
 	}
 
-	var networks []*libcni.NetworkConfig
+	var networks []*libcni.NetworkConfigList
 	for _, p := range nets {
 		name := strings.TrimSuffix(p.Name(), filepath.Ext(p.Name()))
 		n, err := l.GetNetwork(name)

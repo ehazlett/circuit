@@ -34,9 +34,9 @@ var (
 // Datastore is the interface to implement for the circuit datastore
 type Datastore interface {
 	// GetNetwork returns the CNI network config for the specified network
-	GetNetwork(name string) (*libcni.NetworkConfig, error)
+	GetNetwork(name string) (*libcni.NetworkConfigList, error)
 	// GetNetworks returns all CNI network configs
-	GetNetworks() ([]*libcni.NetworkConfig, error)
+	GetNetworks() ([]*libcni.NetworkConfigList, error)
 	// SaveNetwork saves a CNI network config as byte array to the datastore
 	SaveNetwork(name string, data []byte) error
 	// DeleteNetwork removes the network from the datastore
